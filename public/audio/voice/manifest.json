@@ -1,0 +1,1026 @@
+{
+ "deux": {
+  "start": [
+   {
+    "file": "deux_start_1.mp3",
+    "ja": "さあ、商売の時間だ!",
+    "en": "Time to do business!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[mischievously]|さあ、商売の時間だ!"
+   }
+  ],
+  "light": [
+   {
+    "file": "deux_light_1.mp3",
+    "ja": "それっ!",
+    "en": "",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[short sharp battle cry]|それっ!"
+   },
+   {
+    "file": "deux_light_2.mp3",
+    "ja": "ほいっ!",
+    "en": "",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[short sharp battle cry]|ほいっ!"
+   },
+   {
+    "file": "deux_light_3.mp3",
+    "ja": "燃えな!",
+    "en": "",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|燃えな!"
+   }
+  ],
+  "heavy": [
+   {
+    "file": "deux_heavy_1.mp3",
+    "ja": "フレア!",
+    "en": "Flare!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|フレア!"
+   },
+   {
+    "file": "deux_heavy_2.mp3",
+    "ja": "まとめて灰になりな!",
+    "en": "To ash, the lot of you!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|まとめて灰になりな!"
+   }
+  ],
+  "hurt": [
+   {
+    "file": "deux_hurt_1.mp3",
+    "ja": "いてっ!",
+    "en": "",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[cries out in pain]|いてっ!"
+   },
+   {
+    "file": "deux_hurt_2.mp3",
+    "ja": "うわっ!",
+    "en": "",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[cries out in pain]|うわっ!"
+   }
+  ],
+  "down": [
+   {
+    "file": "deux_down_1.mp3",
+    "ja": "ちょ、ちょっと待った…!",
+    "en": "W-wait, time out…!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[cries out in pain]|ちょ、ちょっと待った…!"
+   }
+  ],
+  "dodge": [
+   {
+    "file": "deux_dodge_1.mp3",
+    "ja": "ヒヒッ、残念でした!",
+    "en": "Hee hee, too bad!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[laughing, mischievously]|ヒヒッ、残念でした!"
+   }
+  ],
+  "takeover": [
+   {
+    "file": "deux_takeover_1.mp3",
+    "ja": "ボクの出番だね!",
+    "en": "My turn!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[excited]|ボクの出番だね!"
+   },
+   {
+    "file": "deux_takeover_2.mp3",
+    "ja": "任せときな!",
+    "en": "Leave it to me!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[excited]|任せときな!"
+   }
+  ],
+  "healed": [
+   {
+    "file": "deux_healed_1.mp3",
+    "ja": "ツケにしといて!",
+    "en": "Put it on my tab!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[mischievously]|ツケにしといて!"
+   }
+  ],
+  "fallen": [
+   {
+    "file": "deux_fallen_1.mp3",
+    "ja": "店…閉めなきゃ…",
+    "en": "Gotta… close up shop…",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[weakly, out of breath]|店…閉めなきゃ…"
+   }
+  ],
+  "allyFallen": [
+   {
+    "file": "deux_allyFallen_1.mp3",
+    "ja": "おい、寝るには早いぞ!",
+    "en": "Hey, too early for a nap!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|おい、寝るには早いぞ!"
+   }
+  ],
+  "stagger": [
+   {
+    "file": "deux_stagger_1.mp3",
+    "ja": "今だ、たたみかけろ!",
+    "en": "Now! Pile on!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|今だ、たたみかけろ!"
+   }
+  ],
+  "allout": [
+   {
+    "file": "deux_allout_1.mp3",
+    "ja": "特大サービスだ!",
+    "en": "Extra large, on the house!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|特大サービスだ!"
+   }
+  ],
+  "phase2": [
+   {
+    "file": "deux_phase2_1.mp3",
+    "ja": "聞いてないぞ、こんなの!",
+    "en": "Nobody told me about this!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[alarmed]|聞いてないぞ、こんなの!"
+   }
+  ],
+  "low": [
+   {
+    "file": "deux_low_1.mp3",
+    "ja": "割に合わないなぁ…",
+    "en": "This is not worth the pay…",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[weakly, out of breath]|割に合わないなぁ…"
+   }
+  ],
+  "victory": [
+   {
+    "file": "deux_victory_1.mp3",
+    "ja": "まいどあり〜!",
+    "en": "Pleasure doing business!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[laughing, mischievously]|まいどあり〜!"
+   }
+  ],
+  "story-arrive-2": [
+   {
+    "file": "deux_story-arrive-2_1.mp3",
+    "ja": "でっかい像に、見張りなし、入場料なし。…うますぎる話だねぇ。",
+    "en": "One giant statue, no guards, no entry fee. …This deal is too good.",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[suspicious, mischievously]|でっかい像に、見張りなし、入場料なし。…うますぎる話だねぇ。"
+   }
+  ],
+  "story-wake-1": [
+   {
+    "file": "deux_story-wake-1_1.mp3",
+    "ja": "うわ、動いた! だから言ったんだ、うますぎるって!",
+    "en": "Whoa, it moves! I TOLD you it was too good!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[alarmed, shouting]|うわ、動いた! だから言ったんだ、うますぎるって!"
+   }
+  ],
+  "story-lore-0": [
+   {
+    "file": "deux_story-lore-0_1.mp3",
+    "ja": "で、結局こいつは何なんだい!?",
+    "en": "So what IS this thing, anyway?!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting]|で、結局こいつは何なんだい!?"
+   }
+  ],
+  "story-twelve-2": [
+   {
+    "file": "deux_story-twelve-2_1.mp3",
+    "ja": "それにウチは十人だよ。数え直しな!",
+    "en": "And there are ten of us. Count again!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[mischievously, shouting]|それにウチは十人だよ。数え直しな!"
+   }
+  ],
+  "story-friends-2": [
+   {
+    "file": "deux_story-friends-2_1.mp3",
+    "ja": "ルナには、この土産話を高く売りつけないとね!",
+    "en": "And I'm selling Luna this story at a premium!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[mischievously]|ルナには、この土産話を高く売りつけないとね!"
+   }
+  ],
+  "story-rally-0": [
+   {
+    "file": "deux_story-rally-0_1.mp3",
+    "ja": "これは、ボクらを信じてくれる仲間のためだ!",
+    "en": "This is for our friends — the ones who believe in us!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[shouting, heartfelt]|これは、ボクらを信じてくれる仲間のためだ!"
+   }
+  ],
+  "story-rally-1": [
+   {
+    "file": "deux_story-rally-1_1.mp3",
+    "ja": "よーし、全部乗せでいくよ!",
+    "en": "Right — everything we've got!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[excited, shouting]|よーし、全部乗せでいくよ!"
+   }
+  ],
+  "story-alone-0": [
+   {
+    "file": "deux_story-alone-0_1.mp3",
+    "ja": "ひとりで全員分かい…。高くつくよ、これは!",
+    "en": "All four shares on me, huh… This is going to cost extra!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[out of breath, defiant]|ひとりで全員分かい…。高くつくよ、これは!"
+   }
+  ],
+  "story-fallen-sigmund-0": [
+   {
+    "file": "deux_story-fallen-sigmund-0_1.mp3",
+    "ja": "シグムンド! ツケを残して寝るんじゃないよ!",
+    "en": "Sigmund! Don't you nap on an unpaid tab!",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[alarmed, shouting]|シグムンド! ツケを残して寝るんじゃないよ!"
+   }
+  ],
+  "story-victory-1": [
+   {
+    "file": "deux_story-victory-1_1.mp3",
+    "ja": "オフィウクス、ね。店の新メニューの名前にしてやるよ。蛇料理でさ。",
+    "en": "Ophiuchus, huh. I'll name a dish after you. Something with snake.",
+    "stamp": "eleven_v4|N2lVS1w4EtoT3dr4eOWO|3|0.3||[mischievously]|オフィウクス、ね。店の新メニューの名前にしてやるよ。蛇料理でさ。"
+   }
+  ]
+ },
+ "symbeline": {
+  "start": [
+   {
+    "file": "symbeline_start_1.mp3",
+    "ja": "さあ、踊りましょ!",
+    "en": "Come on, let's dance!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[excited]|さあ、踊りましょ!"
+   }
+  ],
+  "light": [
+   {
+    "file": "symbeline_light_1.mp3",
+    "ja": "はっ!",
+    "en": "",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[short sharp battle cry]|はっ!"
+   },
+   {
+    "file": "symbeline_light_2.mp3",
+    "ja": "それっ!",
+    "en": "",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[short sharp battle cry]|それっ!"
+   },
+   {
+    "file": "symbeline_light_3.mp3",
+    "ja": "ほらほら!",
+    "en": "",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[playfully, shouting]|ほらほら!"
+   }
+  ],
+  "heavy": [
+   {
+    "file": "symbeline_heavy_1.mp3",
+    "ja": "舞え、チャクラム!",
+    "en": "Dance, chakrams!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting]|舞え、チャクラム!"
+   },
+   {
+    "file": "symbeline_heavy_2.mp3",
+    "ja": "受け取って!",
+    "en": "Catch!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting]|受け取って!"
+   }
+  ],
+  "hurt": [
+   {
+    "file": "symbeline_hurt_1.mp3",
+    "ja": "きゃっ!",
+    "en": "",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[cries out in pain]|きゃっ!"
+   },
+   {
+    "file": "symbeline_hurt_2.mp3",
+    "ja": "痛っ!",
+    "en": "",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[cries out in pain]|痛っ!"
+   }
+  ],
+  "down": [
+   {
+    "file": "symbeline_down_1.mp3",
+    "ja": "ちょっと…乱暴ね…!",
+    "en": "Hey… so rough…!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[cries out in pain]|ちょっと…乱暴ね…!"
+   }
+  ],
+  "dodge": [
+   {
+    "file": "symbeline_dodge_1.mp3",
+    "ja": "あはっ、遅い遅い!",
+    "en": "Aha, too slow!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[laughing]|あはっ、遅い遅い!"
+   }
+  ],
+  "takeover": [
+   {
+    "file": "symbeline_takeover_1.mp3",
+    "ja": "あたしの番ね!",
+    "en": "My turn!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[excited]|あたしの番ね!"
+   },
+   {
+    "file": "symbeline_takeover_2.mp3",
+    "ja": "見ててよね!",
+    "en": "Watch me!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[excited]|見ててよね!"
+   }
+  ],
+  "healed": [
+   {
+    "file": "symbeline_healed_1.mp3",
+    "ja": "ありがと、助かったわ!",
+    "en": "Thanks, I needed that!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[warmly]|ありがと、助かったわ!"
+   }
+  ],
+  "fallen": [
+   {
+    "file": "symbeline_fallen_1.mp3",
+    "ja": "パーティは…おしまい…?",
+    "en": "Is the party… over…?",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[weakly, out of breath]|パーティは…おしまい…?"
+   }
+  ],
+  "allyFallen": [
+   {
+    "file": "symbeline_allyFallen_1.mp3",
+    "ja": "うそ、しっかりして!",
+    "en": "No! Hang in there!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[alarmed, shouting]|うそ、しっかりして!"
+   }
+  ],
+  "stagger": [
+   {
+    "file": "symbeline_stagger_1.mp3",
+    "ja": "チャンスよ、みんな!",
+    "en": "Here's our chance, everyone!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting]|チャンスよ、みんな!"
+   }
+  ],
+  "allout": [
+   {
+    "file": "symbeline_allout_1.mp3",
+    "ja": "フィナーレよ!",
+    "en": "Time for the finale!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting]|フィナーレよ!"
+   }
+  ],
+  "phase2": [
+   {
+    "file": "symbeline_phase2_1.mp3",
+    "ja": "あら、まだ踊れるの?",
+    "en": "Oh? You can still dance?",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[amused]|あら、まだ踊れるの?"
+   }
+  ],
+  "low": [
+   {
+    "file": "symbeline_low_1.mp3",
+    "ja": "まだ…踊れるわ…!",
+    "en": "I can… still dance…!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[weakly, out of breath]|まだ…踊れるわ…!"
+   }
+  ],
+  "victory": [
+   {
+    "file": "symbeline_victory_1.mp3",
+    "ja": "最高の夜だったわ!",
+    "en": "What a night!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[laughing, delighted]|最高の夜だったわ!"
+   }
+  ],
+  "story-arrive-0": [
+   {
+    "file": "symbeline_story-arrive-0_1.mp3",
+    "ja": "ここが、サクニテが星で見たっていう場所? …静かすぎない?",
+    "en": "So this is the place Sacniete saw in her stars? …It's awfully quiet.",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[curious, hushed]|ここが、サクニテが星で見たっていう場所? …静かすぎない?"
+   }
+  ],
+  "story-arrive-3": [
+   {
+    "file": "symbeline_story-arrive-3_1.mp3",
+    "ja": "心配性ね。「あなたたち四人で十分」って、サクニテは言ってたわ。みんな、信じてくれてるのよ。",
+    "en": "Oh, relax. \"You four will be enough,\" Sacniete said. They believe in us — every one of them.",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[playfully, warmly]|心配性ね。「あなたたち四人で十分」って、サクニテは言ってたわ。みんな、信じてくれてるのよ。"
+   }
+  ],
+  "story-lore-2": [
+   {
+    "file": "symbeline_story-lore-2_1.mp3",
+    "ja": "忘れられた? …それは機嫌も悪くなるわね。",
+    "en": "Forgotten? …No wonder it's in a mood.",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[amused]|忘れられた? …それは機嫌も悪くなるわね。"
+   }
+  ],
+  "story-eclipse-1": [
+   {
+    "file": "symbeline_story-eclipse-1_1.mp3",
+    "ja": "帰ったらサクニテに「だから言ったでしょ」って言われるわね、これ。",
+    "en": "Sacniete is going to say \"I told you so\" when we get home, isn't she.",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[wry, amused]|帰ったらサクニテに「だから言ったでしょ」って言われるわね、これ。"
+   }
+  ],
+  "story-friends-0": [
+   {
+    "file": "symbeline_story-friends-0_1.mp3",
+    "ja": "ラサスがいたら、大笑いしながら飛び込んでるわね!",
+    "en": "If Rathas were here she'd be diving in, laughing her head off!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[laughing]|ラサスがいたら、大笑いしながら飛び込んでるわね!"
+   }
+  ],
+  "story-allout-0": [
+   {
+    "file": "symbeline_story-allout-0_1.mp3",
+    "ja": "今の見た!? ルナならきっと、首飾りにしたがるわ!",
+    "en": "Did you SEE that?! Luna would want it set in a necklace!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[excited]|今の見た!? ルナならきっと、首飾りにしたがるわ!"
+   }
+  ],
+  "story-rally-0": [
+   {
+    "file": "symbeline_story-rally-0_1.mp3",
+    "ja": "これは、あたしたちを信じてくれる仲間のために!",
+    "en": "This is for our friends — who believe in us!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting, heartfelt]|これは、あたしたちを信じてくれる仲間のために!"
+   }
+  ],
+  "story-rally-1": [
+   {
+    "file": "symbeline_story-rally-1_1.mp3",
+    "ja": "最後まで、踊りきるわよ!",
+    "en": "We dance this one to the end!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[shouting]|最後まで、踊りきるわよ!"
+   }
+  ],
+  "story-alone-0": [
+   {
+    "file": "symbeline_story-alone-0_1.mp3",
+    "ja": "みんな…見ててよね。あたし、まだ踊れるから!",
+    "en": "Everyone… watch me. I can still dance!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[out of breath, determined]|みんな…見ててよね。あたし、まだ踊れるから!"
+   }
+  ],
+  "story-fallen-ghalus-0": [
+   {
+    "file": "symbeline_story-fallen-ghalus-0_1.mp3",
+    "ja": "ガルス! …あたしを叱る人が、いなくなるじゃない!",
+    "en": "Ghalus! …Who's going to scold me now?!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[alarmed, shouting]|ガルス! …あたしを叱る人が、いなくなるじゃない!"
+   }
+  ],
+  "story-victory-2": [
+   {
+    "file": "symbeline_story-victory-2_1.mp3",
+    "ja": "今夜はお屋敷でパーティよ! ガルスのおごりで!",
+    "en": "Party at the mansion tonight! Ghalus is buying!",
+    "stamp": "eleven_v4|cgSgspJ2msm6clMCkdW9|0.5|0.3||[laughing, delighted]|今夜はお屋敷でパーティよ! ガルスのおごりで!"
+   }
+  ]
+ },
+ "ghalus": {
+  "start": [
+   {
+    "file": "ghalus_start_1.mp3",
+    "ja": "やれやれ…手早く済ませましょう。",
+    "en": "Good grief… let us be quick about this.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[sighs]|やれやれ…手早く済ませましょう。"
+   }
+  ],
+  "light": [
+   {
+    "file": "ghalus_light_1.mp3",
+    "ja": "光よ!",
+    "en": "",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|光よ!"
+   },
+   {
+    "file": "ghalus_light_2.mp3",
+    "ja": "そこです!",
+    "en": "",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|そこです!"
+   },
+   {
+    "file": "ghalus_light_3.mp3",
+    "ja": "はっ!",
+    "en": "",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[short sharp battle cry]|はっ!"
+   }
+  ],
+  "heavy": [
+   {
+    "file": "ghalus_heavy_1.mp3",
+    "ja": "聖域よ!",
+    "en": "Sanctum!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|聖域よ!"
+   },
+   {
+    "file": "ghalus_heavy_2.mp3",
+    "ja": "裁きの光を!",
+    "en": "Light of judgement!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|裁きの光を!"
+   }
+  ],
+  "hurt": [
+   {
+    "file": "ghalus_hurt_1.mp3",
+    "ja": "くっ…!",
+    "en": "",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[cries out in pain]|くっ…!"
+   },
+   {
+    "file": "ghalus_hurt_2.mp3",
+    "ja": "ぬうっ…!",
+    "en": "",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[cries out in pain]|ぬうっ…!"
+   }
+  ],
+  "down": [
+   {
+    "file": "ghalus_down_1.mp3",
+    "ja": "年には…勝てませんね…",
+    "en": "I am not as young as I was…",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[cries out in pain]|年には…勝てませんね…"
+   }
+  ],
+  "dodge": [
+   {
+    "file": "ghalus_dodge_1.mp3",
+    "ja": "おっと、危ない。",
+    "en": "Whoa. That was close.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, amused]|おっと、危ない。"
+   }
+  ],
+  "takeover": [
+   {
+    "file": "ghalus_takeover_1.mp3",
+    "ja": "私が出ましょう。",
+    "en": "I shall step in.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, firm]|私が出ましょう。"
+   },
+   {
+    "file": "ghalus_takeover_2.mp3",
+    "ja": "お任せを。",
+    "en": "Leave it to me.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, firm]|お任せを。"
+   }
+  ],
+  "mend": [
+   {
+    "file": "ghalus_mend_1.mp3",
+    "ja": "癒しを。",
+    "en": "Be healed.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, warmly]|癒しを。"
+   },
+   {
+    "file": "ghalus_mend_2.mp3",
+    "ja": "じっとしていなさい。",
+    "en": "Hold still.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, firm]|じっとしていなさい。"
+   }
+  ],
+  "cure": [
+   {
+    "file": "ghalus_cure_1.mp3",
+    "ja": "みなさん、立て直しますよ!",
+    "en": "Everyone, we regroup!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|みなさん、立て直しますよ!"
+   }
+  ],
+  "fallen": [
+   {
+    "file": "ghalus_fallen_1.mp3",
+    "ja": "お茶の…時間が…",
+    "en": "My tea… time…",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[weakly, out of breath]|お茶の…時間が…"
+   }
+  ],
+  "allyFallen": [
+   {
+    "file": "ghalus_allyFallen_1.mp3",
+    "ja": "いけません…!",
+    "en": "No…!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[alarmed]|いけません…!"
+   }
+  ],
+  "stagger": [
+   {
+    "file": "ghalus_stagger_1.mp3",
+    "ja": "今です、総攻撃を!",
+    "en": "Now! All-out attack!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|今です、総攻撃を!"
+   }
+  ],
+  "allout": [
+   {
+    "file": "ghalus_allout_1.mp3",
+    "ja": "星よ、導きたまえ!",
+    "en": "Stars, guide us!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|星よ、導きたまえ!"
+   }
+  ],
+  "phase2": [
+   {
+    "file": "ghalus_phase2_1.mp3",
+    "ja": "ここからが本番のようですね。",
+    "en": "So the real fight begins here.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, grave]|ここからが本番のようですね。"
+   }
+  ],
+  "low": [
+   {
+    "file": "ghalus_low_1.mp3",
+    "ja": "少々…無理をしましたか…",
+    "en": "Perhaps I overdid it…",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[weakly, out of breath]|少々…無理をしましたか…"
+   }
+  ],
+  "victory": [
+   {
+    "file": "ghalus_victory_1.mp3",
+    "ja": "さて、お茶にしましょうか。",
+    "en": "Now then. Shall we have tea?",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, warmly]|さて、お茶にしましょうか。"
+   }
+  ],
+  "story-arrive-1": [
+   {
+    "file": "ghalus_story-arrive-1_1.mp3",
+    "ja": "十二の星座の輪…そして、砕かれた十三番目の台座。ここで何かが、空から消されたのです。",
+    "en": "A wheel of twelve signs… and a thirteenth plinth, smashed. Something was struck from the heavens here.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[thoughtful, grave]|十二の星座の輪…そして、砕かれた十三番目の台座。ここで何かが、空から消されたのです。"
+   }
+  ],
+  "story-approach-0": [
+   {
+    "file": "ghalus_story-approach-0_1.mp3",
+    "ja": "シグムンド、突っ込んではいけませんよ。今日はドラコーンがいないのですから。",
+    "en": "Sigmund, no charging in. Drakohn is not here to pull you out today.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, firm]|シグムンド、突っ込んではいけませんよ。今日はドラコーンがいないのですから。"
+   }
+  ],
+  "story-lore-1": [
+   {
+    "file": "ghalus_story-lore-1_1.mp3",
+    "ja": "蛇遣い座、オフィウクス。星座の輪から外され、忘れられた十三番目の星です。",
+    "en": "Ophiuchus, the Serpent-Bearer. The thirteenth sign — cast out of the zodiac, and forgotten.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, grave]|蛇遣い座、オフィウクス。星座の輪から外され、忘れられた十三番目の星です。"
+   }
+  ],
+  "story-eclipse-0": [
+   {
+    "file": "ghalus_story-eclipse-0_1.mp3",
+    "ja": "月が…喰われた…。皆さん、光のそばを離れないように。",
+    "en": "The moon… it has been swallowed. Stay close to the light, all of you.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[grave]|月が…喰われた…。皆さん、光のそばを離れないように。"
+   }
+  ],
+  "story-allout-1": [
+   {
+    "file": "ghalus_story-allout-1_1.mp3",
+    "ja": "気を抜かないで。まだ立ち上がりますよ。",
+    "en": "Stay sharp. It is getting back up.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, firm]|気を抜かないで。まだ立ち上がりますよ。"
+   }
+  ],
+  "story-rally-0": [
+   {
+    "file": "ghalus_story-rally-0_1.mp3",
+    "ja": "これは、私たちを信じてくれる仲間のために!",
+    "en": "This is for our friends, who believe in us!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting, heartfelt]|これは、私たちを信じてくれる仲間のために!"
+   }
+  ],
+  "story-rally-1": [
+   {
+    "file": "ghalus_story-rally-1_1.mp3",
+    "ja": "ええ。必ず、皆で帰りましょう。",
+    "en": "Yes. We all go home together.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, warmly]|ええ。必ず、皆で帰りましょう。"
+   }
+  ],
+  "story-alone-0": [
+   {
+    "file": "ghalus_story-alone-0_1.mp3",
+    "ja": "皆さんの分まで…私が、立っていなくては。",
+    "en": "For all of you… I must stay standing.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[out of breath, resolute]|皆さんの分まで…私が、立っていなくては。"
+   }
+  ],
+  "story-fallen-symbeline-0": [
+   {
+    "file": "ghalus_story-fallen-symbeline-0_1.mp3",
+    "ja": "シンベリン! …説教は、まだ終わっていませんよ!",
+    "en": "Symbeline! …I am not finished lecturing you!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[alarmed, shouting]|シンベリン! …説教は、まだ終わっていませんよ!"
+   }
+  ],
+  "story-final-0": [
+   {
+    "file": "ghalus_story-final-0_1.mp3",
+    "ja": "光が弱まっています…あと一押しです!",
+    "en": "Its light is failing… one more push!",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[shouting]|光が弱まっています…あと一押しです!"
+   }
+  ],
+  "story-victory-0": [
+   {
+    "file": "ghalus_story-victory-0_1.mp3",
+    "ja": "お眠りなさい、十三番目の星よ。あなたの名は、私たちが覚えておきます。",
+    "en": "Rest now, thirteenth star. We will remember your name.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[calm, gently]|お眠りなさい、十三番目の星よ。あなたの名は、私たちが覚えておきます。"
+   }
+  ],
+  "story-victory-3": [
+   {
+    "file": "ghalus_story-victory-3_1.mp3",
+    "ja": "おごりません。",
+    "en": "I am not.",
+    "stamp": "eleven_v4|JBFqnCBsd6RMkjVDRZzb|0|0.45||[flatly]|おごりません。"
+   }
+  ]
+ },
+ "sigmund": {
+  "start": [
+   {
+    "file": "sigmund_start_1.mp3",
+    "ja": "……行くぞ。",
+    "en": "…Let's go.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……行くぞ。"
+   }
+  ],
+  "light": [
+   {
+    "file": "sigmund_light_1.mp3",
+    "ja": "ふんっ!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[short sharp battle cry]|ふんっ!"
+   },
+   {
+    "file": "sigmund_light_2.mp3",
+    "ja": "はあっ!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[short sharp battle cry]|はあっ!"
+   },
+   {
+    "file": "sigmund_light_3.mp3",
+    "ja": "ぬんっ!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[short sharp battle cry]|ぬんっ!"
+   }
+  ],
+  "heavy": [
+   {
+    "file": "sigmund_heavy_1.mp3",
+    "ja": "砕けろ!",
+    "en": "Shatter!",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[shouting]|砕けろ!"
+   },
+   {
+    "file": "sigmund_heavy_2.mp3",
+    "ja": "闇に沈め!",
+    "en": "Sink into the dark!",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[shouting]|闇に沈め!"
+   }
+  ],
+  "hurt": [
+   {
+    "file": "sigmund_hurt_1.mp3",
+    "ja": "ぐっ…!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[cries out in pain]|ぐっ…!"
+   },
+   {
+    "file": "sigmund_hurt_2.mp3",
+    "ja": "ちっ…!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[annoyed grunt]|ちっ…!"
+   }
+  ],
+  "down": [
+   {
+    "file": "sigmund_down_1.mp3",
+    "ja": "ぐあっ…!",
+    "en": "",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[cries out in pain]|ぐあっ…!"
+   }
+  ],
+  "dodge": [
+   {
+    "file": "sigmund_dodge_1.mp3",
+    "ja": "…見切った。",
+    "en": "…Read it.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|…見切った。"
+   }
+  ],
+  "takeover": [
+   {
+    "file": "sigmund_takeover_1.mp3",
+    "ja": "任せろ。",
+    "en": "Leave it to me.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|任せろ。"
+   },
+   {
+    "file": "sigmund_takeover_2.mp3",
+    "ja": "俺がやる。",
+    "en": "I'll do it.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|俺がやる。"
+   }
+  ],
+  "healed": [
+   {
+    "file": "sigmund_healed_1.mp3",
+    "ja": "…助かる。",
+    "en": "…Thanks.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|…助かる。"
+   }
+  ],
+  "fallen": [
+   {
+    "file": "sigmund_fallen_1.mp3",
+    "ja": "すまん…",
+    "en": "Sorry…",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[weakly, out of breath]|すまん…"
+   }
+  ],
+  "allyFallen": [
+   {
+    "file": "sigmund_allyFallen_1.mp3",
+    "ja": "…許さん。",
+    "en": "…Unforgivable.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, angry]|…許さん。"
+   }
+  ],
+  "stagger": [
+   {
+    "file": "sigmund_stagger_1.mp3",
+    "ja": "今だ、叩き込め!",
+    "en": "Now! Hit it hard!",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[shouting]|今だ、叩き込め!"
+   }
+  ],
+  "allout": [
+   {
+    "file": "sigmund_allout_1.mp3",
+    "ja": "終わりだ!",
+    "en": "This ends!",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[shouting]|終わりだ!"
+   }
+  ],
+  "phase2": [
+   {
+    "file": "sigmund_phase2_1.mp3",
+    "ja": "…面白い。",
+    "en": "…Interesting.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|…面白い。"
+   }
+  ],
+  "low": [
+   {
+    "file": "sigmund_low_1.mp3",
+    "ja": "まだ…倒れん…!",
+    "en": "Not… falling yet…!",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[weakly, out of breath]|まだ…倒れん…!"
+   }
+  ],
+  "victory": [
+   {
+    "file": "sigmund_victory_1.mp3",
+    "ja": "…昼飯にするか。",
+    "en": "…Time for lunch.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|…昼飯にするか。"
+   }
+  ],
+  "story-arrive-4": [
+   {
+    "file": "sigmund_story-arrive-4_1.mp3",
+    "ja": "……像じゃない。",
+    "en": "…That's no statue.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……像じゃない。"
+   }
+  ],
+  "story-approach-1": [
+   {
+    "file": "sigmund_story-approach-1_1.mp3",
+    "ja": "……なら、倒れなければいい。",
+    "en": "…Then I just won't fall.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……なら、倒れなければいい。"
+   }
+  ],
+  "story-twelve-1": [
+   {
+    "file": "sigmund_story-twelve-1_1.mp3",
+    "ja": "……俺たちは、ただの冒険者だ。",
+    "en": "…We're just adventurers.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……俺たちは、ただの冒険者だ。"
+   }
+  ],
+  "story-friends-1": [
+   {
+    "file": "sigmund_story-friends-1_1.mp3",
+    "ja": "……ゼントスケとの、ハイタッチが待っている。",
+    "en": "…Zentosuke owes me a high five.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……ゼントスケとの、ハイタッチが待っている。"
+   }
+  ],
+  "story-rally-0": [
+   {
+    "file": "sigmund_story-rally-0_1.mp3",
+    "ja": "……俺たちを信じる、仲間のために。",
+    "en": "…For our friends. The ones who believe in us.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, resolute]|……俺たちを信じる、仲間のために。"
+   }
+  ],
+  "story-rally-1": [
+   {
+    "file": "sigmund_story-rally-1_1.mp3",
+    "ja": "……ああ。",
+    "en": "…Aye.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……ああ。"
+   }
+  ],
+  "story-alone-0": [
+   {
+    "file": "sigmund_story-alone-0_1.mp3",
+    "ja": "……ひとりでも、倒れん。",
+    "en": "…Alone, then. I won't fall.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, resolute]|……ひとりでも、倒れん。"
+   }
+  ],
+  "story-fallen-deux-0": [
+   {
+    "file": "sigmund_story-fallen-deux-0_1.mp3",
+    "ja": "ドゥー…! 昼飯の約束は、まだ生きてるぞ。",
+    "en": "Deux…! You still owe me lunch.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, angry]|ドゥー…! 昼飯の約束は、まだ生きてるぞ。"
+   }
+  ],
+  "story-victory-4": [
+   {
+    "file": "sigmund_story-victory-4_1.mp3",
+    "ja": "……まずは昼飯だ。",
+    "en": "…Lunch first.",
+    "stamp": "eleven_v4|pNInz6obpgDQGcFmaJgB|-2|0.4||[low, gruff]|……まずは昼飯だ。"
+   }
+  ]
+ },
+ "boss": {
+  "intro": [
+   {
+    "file": "boss_intro_1.mp3",
+    "ja": "我が名を…呼ぶのは…誰だ…",
+    "en": "Who… calls… my name…",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[very slow, deep, ominous]|我が名を…呼ぶのは…誰だ…"
+   }
+  ],
+  "phase2": [
+   {
+    "file": "boss_phase2_1.mp3",
+    "ja": "十三番目の星は…己が名を忘れぬ!",
+    "en": "The thirteenth star does not forget its name!",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[deep, furious, shouting]|十三番目の星は…己が名を忘れぬ!"
+   }
+  ],
+  "taunt": [
+   {
+    "file": "boss_taunt_1.mp3",
+    "ja": "塵に還れ。",
+    "en": "Return to dust.",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[very slow, deep, cold]|塵に還れ。"
+   }
+  ],
+  "starfall": [
+   {
+    "file": "boss_starfall_1.mp3",
+    "ja": "星よ、降れ。",
+    "en": "Stars, fall.",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[slow, deep, commanding]|星よ、降れ。"
+   }
+  ],
+  "beam": [
+   {
+    "file": "boss_beam_1.mp3",
+    "ja": "消えよ!",
+    "en": "Begone!",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[deep, shouting]|消えよ!"
+   }
+  ],
+  "stagger": [
+   {
+    "file": "boss_stagger_1.mp3",
+    "ja": "ぬうっ…!",
+    "en": "",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[deep groan of pain]|ぬうっ…!"
+   }
+  ],
+  "death": [
+   {
+    "file": "boss_death_1.mp3",
+    "ja": "星々よ…我を…忘れるな…",
+    "en": "O stars… do not… forget me…",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[very slow, deep, fading, dying]|星々よ…我を…忘れるな…"
+   }
+  ],
+  "story-twelve-0": [
+   {
+    "file": "boss_story-twelve-0_1.mp3",
+    "ja": "十二…いつも十二だ…。その名を掲げる者どもよ…!",
+    "en": "Twelve… always twelve… You who bear their name…!",
+    "stamp": "eleven_v4|nPczCjzI2devNBz1zQrb|-6|0.5|aecho=0.8:0.75:70|140|260:0.4|0.28|0.16,lowpass=f=5200,bass=g=5:f=110|[slow, deep, bitter]|十二…いつも十二だ…。その名を掲げる者どもよ…!"
+   }
+  ]
+ }
+}

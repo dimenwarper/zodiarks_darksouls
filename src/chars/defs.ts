@@ -144,7 +144,7 @@ const GHALUS: CharDef = {
   ],
   heavy: { id: 'gha_h', label: 'Sanctum', anim: 'channel', windup: 1.1, active: 0.15, recovery: 0.65, stamina: 42, damage: 125, stagger: 42, kind: 'aoe', range: 60, aoeRadius: 3.8, sfx: 'cast_charge', shake: 0.45, hitstop: 0.1, color: 0xfff2b0 },
   face: { cx: 0.45, cy: 0.115, h: 0.18, aspect: 738 / 1100 },
-  passive: 'Benison — while resting off-field he mends the party and can cast Cure.',
+  passive: 'Benison — fighting as an ally he mends the wounded, and casts Cure when called.',
   hints: { light: 'Glint (instant ray)', heavy: 'Sanctum (pillar, breaks posture)', roll: 'Roll' },
 };
 
@@ -155,29 +155,36 @@ export const START_INDEX = 3;
 export const TUNING = {
   staminaRegen: 30,
   staminaDelay: 0.75,
-  offFieldStaminaRegen: 45,
-  swapCooldown: 1.4,
-  swapIFrames: 0.4,
-  swapAttackBonus: 1.5,
+  swapCooldown: 0.6,
+  /** Seconds after taking control of a Knight in which their first attack hits harder. */
+  tagWindow: 2.5,
+  tagBonus: 1.5,
   sprintDrain: 11,
   hyperArmorSoak: 0.7,
   hurtTime: 0.5,
   downTime: 1.25,
-  // Ghalus, off-field
-  regenActive: 2.2,
-  regenBench: 1.2,
-  regenDelay: 4,
+  // Allies: the Knights fighting on their own while the player steers someone else
+  allyDamage: 0.28,
+  allyDamageTaken: 0.5,
+  /** Scales how reliably allies react to danger (1 = each Knight's own skill). */
+  allySkill: 1,
+  /** How much more the boss favours the Knight the player controls when choosing a target. */
+  aggroLeader: 6,
+  // Ghalus, as an ally
+  mendCooldown: 7,
+  mendAmount: 0.22,
+  mendBelow: 0.7,
   cureCharges: 3,
   cureCooldown: 6,
   cureAmount: 0.5,
-  cureBench: 0.15,
+  cureOthers: 0.15,
   // Buff stacks
   encoreMax: 10,
   encorePer: 0.04,
   kindleMax: 3,
   kindleCast: 0.3,
   kindleDamage: 0.12,
-  /** Seconds after a dodge (or swap) starts in which avoiding a hit counts as perfect. */
+  /** Seconds after a dodge starts in which avoiding a hit counts as perfect. */
   perfectWindow: 0.16,
   perfectDodgeSlow: 0.3,
   perfectDodgeStamina: 18,

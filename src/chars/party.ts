@@ -1,29 +1,12 @@
 import * as THREE from 'three';
-import {
-  clamp, dampAngle, distPointSegment, moveAngle, yawForward, yawLeft, yawOf, rand,
-} from '../core/math';
+import { pickWeighted, yawForward, yawLeft } from '../core/math';
 import type { Input } from '../core/input';
-import type { Hazard, World } from '../types';
+import type { World } from '../types';
 import type { BossPart, Colossus } from '../boss/colossus';
-import { ARENA_RADIUS } from '../world/arena';
-import { PARTY, START_INDEX, TUNING, type CharDef, type MoveDef } from './defs';
+import { PARTY, START_INDEX, TUNING, type MoveDef } from './defs';
 import type { CharVisual } from './visual';
-
-export interface Member {
-  def: CharDef;
-  hp: number;
-  stamina: number;
-  alive: boolean;
-  visual: CharVisual;
-  staminaDelay: number;
-  /** Symbeline's tempo stacks. */
-  encore: number;
-  /** Deux's Flare quickening stacks. */
-  kindle: number;
-  healPending: number;
-}
-
-type State = 'free' | 'attack' | 'roll' | 'hurt' | 'down' | 'dead' | 'swapIn';
+import { Knight, type Controls } from './knight';
+import { AllyBrain } from './ally';
 
 interface Projectile {
   kind: 'ember' | 'chakram';
@@ -33,13 +16,12 @@ interface Projectile {
   goal: THREE.Vector3;
   life: number;
   move: MoveDef;
-  owner: Member;
+  owner: Knight;
   bonus: number;
   mesh: THREE.Object3D;
   returning: boolean;
   hitOut: boolean;
   hitBack: boolean;
-  curve: number;
 }
 
 export interface PartyEvents {
@@ -47,109 +29,149 @@ export interface PartyEvents {
   hurt(amount: number, heavy: boolean): void;
   defeat(): void;
   swapped(index: number): void;
+  /** A Knight went down. True when the game answers it itself (story dialogue). */
+  fallen(k: Knight): boolean;
+}
+
+/** The player's hands on whichever Knight they are steering. */
+class PlayerControls implements Controls {
+  moveX = 0;
+  moveZ = 0;
+  sprint = false;
+  constructor(private input: Input) {}
+  take(action: 'light' | 'heavy' | 'roll', buffer?: number) {
+    return this.input.consume(action, buffer);
+  }
+}
+
+/**
+ * Where everyone stands when the fight opens: the leader in front, the rest fanned out behind
+ * (and nobody straight behind the leader, where the camera sits).
+ */
+export const FORMATION: [number, number][] = [[0, 0], [-3.2, 1.4], [3.2, 1.4], [-5.6, 3.4]];
+export const START_Z = 26;
+
+/** Everyone walking the same way at the same pace, for scenes that move the party themselves. */
+class March implements Controls {
+  moveX = 0;
+  moveZ = 0;
+  sprint = false;
+  take() {
+    return false;
+  }
 }
 
 const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
-const _c = new THREE.Vector3();
 const UP = new THREE.Vector3(0, 1, 0);
 
-/** The player's side: four Knights, one on the field at a time, and everything they throw. */
+/**
+ * The player's side: four Knights on the field at once. The player steers one and can take
+ * over any other at will; the rest fight on their own. Also owns everything they throw.
+ */
 export class Party {
-  members: Member[] = [];
+  members: Knight[] = [];
   active = START_INDEX;
-  pos = new THREE.Vector3(0, 0, 26);
-  vel = new THREE.Vector3();
-  yaw = Math.PI;
-  state: State = 'free';
-  stateT = 0;
-  /** Generic invulnerability timer (swap-in, getting up). */
-  iframes = 0;
   swapCD = 0;
   cureCharges = TUNING.cureCharges;
   cureCD = 0;
-  sinceHit = 99;
+  /** The player's lock-on. Allies choose their own targets. */
   lock: BossPart | null = null;
   /** Cinematics take the controls away and make the party untouchable. */
   cinematic = false;
-  sprinting = false;
-  swapBuff = 0;
-  stats = { damage: 0, hitsTaken: 0, dodges: 0, perfects: 0, swaps: 0, cures: 0, taken: {} as Record<string, number> };
+  /** During a cinematic: walk everyone this way (world x, z) at this many metres a second. */
+  march: { x: number; z: number; pace: number } | null = null;
+  private marching = new March();
+  /** The Knight the boss is hunting right now. */
+  bossTarget!: Knight;
+  /** Circles nobody can walk through this step: the boss's feet and grounded fists. */
+  blockers: { x: number; z: number; r: number }[] = [];
+  stats = Party.freshStats();
 
-  private move: MoveDef | null = null;
-  private moveWindup = 0;
-  private comboIndex = -1;
-  private fired = false;
-  private hitDone = false;
-  private queued: 'light' | 'heavy' | 'roll' | null = null;
-  private bonus = 1;
-  private rollDir = new THREE.Vector3();
-  private perfect = false;
-  private aoeTarget = new THREE.Vector3();
-  private aimPart: BossPart | null = null;
+  private brains: AllyBrain[] = [];
+  private controls: PlayerControls;
+
+  private static freshStats() {
+    return {
+      /** Everything the party dealt, and the part of it that came from allies. */
+      damage: 0, allyDamage: 0,
+      hitsTaken: 0, allyHits: 0, dodges: 0, perfects: 0, swaps: 0, cures: 0, mends: 0,
+      /** Damage taken per boss attack: by the Knight being steered, and by allies. */
+      taken: {} as Record<string, number>,
+      allyTaken: {} as Record<string, number>,
+    };
+  }
   private projectiles: Projectile[] = [];
-  private ghost: { member: Member; t: number } | null = null;
-  private blockers: { x: number; z: number; r: number }[] = [];
   private lastBossState = '';
   private fxGroup = new THREE.Group();
   private deadTimer = 0;
 
   constructor(
-    private world: World,
+    readonly world: World,
     private input: Input,
-    private getBoss: () => Colossus,
-    private events: PartyEvents,
+    readonly getBoss: () => Colossus,
+    readonly events: PartyEvents,
     visuals: CharVisual[],
   ) {
     world.scene.add(this.fxGroup);
+    this.controls = new PlayerControls(input);
     PARTY.forEach((def, i) => {
-      const visual = visuals[i];
-      visual.root.visible = false;
-      world.scene.add(visual.root);
-      this.members.push({ def, hp: def.hp, stamina: def.stamina, alive: true, visual, staminaDelay: 0, encore: 0, kindle: 0, healPending: 0 });
+      const k = new Knight(def, visuals[i], this, world);
+      this.members.push(k);
+      this.brains.push(new AllyBrain(k, this, world));
     });
     this.reset();
   }
 
+  /** The Knight the player is steering. */
   get cur() {
     return this.members[this.active];
+  }
+
+  get pos() {
+    return this.cur.pos;
+  }
+
+  get yaw() {
+    return this.cur.yaw;
+  }
+
+  get state() {
+    return this.cur.state;
+  }
+
+  get sprinting() {
+    return this.cur.sprinting;
   }
 
   get anyAlive() {
     return this.members.some((m) => m.alive);
   }
 
-  reset() {
+  private get ghalus() {
+    return this.members.find((m) => m.def.id === 'ghalus')!;
+  }
+
+  /** `z`: how far from the middle of the arena the leader stands, on the side the colossus faces. */
+  reset(z = START_Z) {
     for (const p of this.projectiles) this.fxGroup.remove(p.mesh);
     this.projectiles.length = 0;
-    this.members.forEach((m, i) => {
-      m.hp = m.def.hp;
-      m.stamina = m.def.stamina;
-      m.alive = true;
-      m.encore = m.kindle = m.healPending = 0;
-      m.staminaDelay = 0;
-      m.visual.root.visible = i === START_INDEX;
-      m.visual.setOpacity(1);
-      m.visual.play('idle', { fade: 0 });
-    });
     this.active = START_INDEX;
-    this.pos.set(0, 0, 26);
-    this.vel.set(0, 0, 0);
-    this.yaw = Math.PI;
-    this.state = 'free';
-    this.stateT = 0;
-    this.iframes = 0;
+    this.march = null;
+    let slot = 1;
+    this.members.forEach((k, i) => {
+      const [x, dz] = FORMATION[i === this.active ? 0 : slot++];
+      k.reset(x, z + dz, Math.PI);
+      this.brains[i].reset();
+    });
+    this.bossTarget = this.cur;
     this.swapCD = 0;
     this.cureCharges = TUNING.cureCharges;
     this.cureCD = 0;
-    this.sinceHit = 99;
     this.lock = null;
-    this.move = null;
-    this.ghost = null;
-    this.swapBuff = 0;
     this.cinematic = false;
-    this.stats = { damage: 0, hitsTaken: 0, dodges: 0, perfects: 0, swaps: 0, cures: 0, taken: {} };
-    this.syncVisual(0);
+    this.deadTimer = 0;
+    this.stats = Party.freshStats();
   }
 
   // ---------------------------------------------------------------- lock-on
@@ -201,117 +223,27 @@ export class Party {
     if (this.lock && (!this.lock.lockable || !this.lockCandidates().length)) this.lock = this.defaultLock();
   }
 
-  /** What an attack should aim at: the lock target, else a sensible default. */
-  private pickAim(move: MoveDef): BossPart | null {
-    if (this.lock) return this.lock;
-    const c = this.lockCandidates();
-    if (!c.length) return null;
-    if (move.kind !== 'melee') return c.find((p) => p.id === 'core') ?? c[0];
-    // Soft melee assist: something reachable, close, and roughly in front.
-    const fwd = yawForward(this.yaw, _a);
-    let best: BossPart | null = null;
-    let bestD = 7;
-    for (const p of c) {
-      if (p.pos.y > 4.6) continue;
-      const dx = p.pos.x - this.pos.x;
-      const dz = p.pos.z - this.pos.z;
-      const d = Math.hypot(dx, dz);
-      if (d < bestD && (dx * fwd.x + dz * fwd.z) / Math.max(0.01, d) > 0.2) {
-        bestD = d;
-        best = p;
-      }
-    }
-    return best;
-  }
+  // ---------------------------------------------------------------- who the player steers
 
-  // ---------------------------------------------------------------- actions
-
-  private startMove(move: MoveDef, comboIndex: number, bonus = 1): boolean {
-    const m = this.cur;
-    if (m.stamina <= 0) return false;
-    m.stamina = Math.max(-25, m.stamina - move.stamina);
-    m.staminaDelay = TUNING.staminaDelay;
-    this.move = move;
-    this.comboIndex = comboIndex;
-    this.bonus = bonus;
-    this.state = 'attack';
-    this.stateT = 0;
-    this.fired = false;
-    this.hitDone = false;
-    this.queued = null;
-    this.moveWindup = move.windup;
-    if (move.id === 'deux_h') this.moveWindup = Math.max(0.5, move.windup - m.kindle * TUNING.kindleCast);
-    this.aimPart = this.pickAim(move);
-    if (this.aimPart) this.yaw = moveAngle(this.yaw, yawOf(this.aimPart.pos.x - this.pos.x, this.aimPart.pos.z - this.pos.z), move.kind === 'melee' ? 1.2 : 4);
-    m.visual.act(move.anim, this.moveWindup, move.active, move.recovery);
-    if (move.kind === 'aoe') {
-      this.world.audio.play(move.sfx, { volume: 0.8, rate: move.windup / this.moveWindup });
-      this.updateAoeTarget();
-    }
-    return true;
-  }
-
-  private updateAoeTarget() {
-    if (this.aimPart) this.aoeTarget.copy(this.aimPart.pos);
-    else yawForward(this.yaw, this.aoeTarget).multiplyScalar(11).add(this.pos).setY(1.5);
-  }
-
-  private startRoll(ix: number, iz: number, mag: number) {
-    const m = this.cur;
-    const r = m.def.roll;
-    m.stamina = Math.max(-25, m.stamina - r.cost);
-    m.staminaDelay = TUNING.staminaDelay;
-    if (mag > 0.15) {
-      this.rollDir.set(ix, 0, iz).normalize();
-      this.yaw = yawOf(this.rollDir.x, this.rollDir.z);
-    } else {
-      // No direction held: hop backwards without turning.
-      yawForward(this.yaw, this.rollDir).negate();
-    }
-    this.state = 'roll';
-    this.stateT = 0;
-    this.perfect = false;
-    this.move = null;
-    this.queued = null;
-    m.visual.play(r.kind, { duration: r.duration, fade: 0.05 });
-    this.world.audio.play(r.kind === 'blink' ? 'blink' : 'roll', { volume: 0.6 });
-    if (r.kind === 'blink') this.blinkFx();
-  }
-
-  private blinkFx() {
-    _a.copy(this.pos).setY(this.cur.def.height * 0.5);
-    this.world.fx.burst(_a, 24, { color: 0xa66bff, color2: 0xff5a8a, intensity: 2.5, speed: [1, 6], size: [0.15, 0.4], life: [0.25, 0.6] });
-    this.world.fx.flash(_a, 0xa66bff, 3, 0.2, 1.5);
-  }
-
+  /** Hand the controls to another Knight. The one let go carries on under their own brain. */
   trySwap(index: number, free = false): boolean {
     const next = this.members[index];
     if (!next || index === this.active || !next.alive) return false;
     if (!free && this.swapCD > 0) return false;
-    const old = this.cur;
-    old.visual.root.visible = false;
-    if (this.ghost?.member === next) this.ghost = null;
-    next.visual.setOpacity(1);
+    const from = this.active;
     this.active = index;
-    next.visual.root.visible = true;
-    this.state = 'swapIn';
-    this.stateT = 0;
-    this.iframes = TUNING.swapIFrames;
-    this.perfect = false;
-    this.move = null;
-    this.queued = null;
-    this.swapCD = free ? 0.4 : TUNING.swapCooldown;
+    this.swapCD = free ? 0.3 : TUNING.swapCooldown;
     this.stats.swaps++;
-    next.visual.play('swapIn', { duration: 0.38, fade: 0 });
+    next.tagT = TUNING.tagWindow;
+    this.brains[from].resume();
     const { fx, audio } = this.world;
-    _a.copy(this.pos).setY(1);
-    fx.burst(_a, 30, { color: old.def.color, intensity: 2, speed: [2, 7], size: [0.15, 0.4], life: [0.3, 0.7] });
-    fx.flash(_a, next.def.color, 5, 0.3, 1.6);
-    fx.ring(this.pos, { r0: 0.4, r1: 3, life: 0.35, color: next.def.color, intensity: 2 });
+    _a.copy(next.pos).setY(next.def.height * 0.6);
+    fx.flash(_a, next.def.color, 4, 0.3, 1.6);
+    fx.ring(next.pos, { r0: 0.4, r1: 2.6, life: 0.35, color: next.def.color, intensity: 2 });
     audio.play('swap', { volume: 0.7 });
     if (this.lock) this.lock = this.defaultLock();
-    this.syncVisual(0);
     this.events.swapped(index);
+    if (!free) next.say('takeover', { priority: 1, cooldown: 2.5 });
     return true;
   }
 
@@ -323,25 +255,81 @@ export class Party {
     return this.active;
   }
 
-  private swapInputs(): boolean {
+  private swapInputs() {
     const input = this.input;
     for (let i = 0; i < 4; i++) {
-      if (input.consume(`swap${i + 1}` as 'swap1')) {
-        if (this.trySwap(i)) return true;
-        if (i !== this.active && this.members[i]?.alive === false) this.events.toast(`${this.members[i].def.name.split(' ')[0]} has fallen`, 'bad');
-      }
+      if (!input.consume(`swap${i + 1}` as 'swap1')) continue;
+      if (this.trySwap(i)) return;
+      if (i !== this.active && this.members[i]?.alive === false) this.events.toast(`${this.members[i].firstName} has fallen`, 'bad');
     }
-    if (input.consume('swapNext')) return this.trySwap(this.nextAlive(1));
-    if (input.consume('swapPrev')) return this.trySwap(this.nextAlive(-1));
-    return false;
+    if (input.consume('swapNext')) this.trySwap(this.nextAlive(1));
+    if (input.consume('swapPrev')) this.trySwap(this.nextAlive(-1));
   }
 
-  /** Ghalus's Cure: only while he rests off-field. */
+  /** Called by a Knight as they go down. */
+  onFallen(k: Knight) {
+    this.events.toast(`${k.firstName} has fallen`, 'bad');
+    if (k === this.cur) this.deadTimer = 1.5;
+    const standing = this.members.filter((m) => m.alive);
+    const answered = this.events.fallen(k);
+    if (standing.length) {
+      // Someone still on their feet answers; now and then the colossus has the last word.
+      if (!answered) standing[Math.floor(Math.random() * standing.length)].say('allyFallen', { priority: 1, delay: 2.3, cooldown: 0 });
+      this.world.voice.say('boss', 'taunt', { priority: 1, delay: answered ? 8 : 5, chance: 0.5, cooldown: 25 });
+    }
+    if (!this.anyAlive) this.events.defeat();
+  }
+
+  /** The boss chooses its next quarry: mostly whoever the player steers, sometimes an ally. */
+  pickBossTarget(): Knight {
+    const boss = this.getBoss().pos;
+    const opts = this.members
+      .filter((m) => m.alive)
+      .map((m) => {
+        if (m === this.cur) return { v: m, w: TUNING.aggroLeader };
+        // Allies draw its eye less: least of all from far away, or twice running.
+        const far = Math.hypot(m.pos.x - boss.x, m.pos.z - boss.z) > 14;
+        return { v: m, w: (far ? 0.5 : 1) * (m === this.bossTarget ? 0.4 : 1) };
+      });
+    this.bossTarget = pickWeighted(opts) ?? this.cur;
+    return this.bossTarget;
+  }
+
+  // ---------------------------------------------------------------- Ghalus's healing
+
+  /** The living Knight in the worst shape, if anyone is below `below` of their health. */
+  mostWounded(below: number): Knight | null {
+    let worst: Knight | null = null;
+    let worstFrac = below;
+    for (const m of this.members) {
+      if (!m.alive) continue;
+      const frac = (m.hp + m.healPending) / m.def.hp;
+      if (frac < worstFrac) {
+        worstFrac = frac;
+        worst = m;
+      }
+    }
+    return worst;
+  }
+
+  private healFx(from: Knight, to: Knight, strong: boolean) {
+    const { fx } = this.world;
+    const cast = from.visual.castPoint(_a);
+    _b.copy(to.pos).setY(to.def.height * 0.6);
+    if (from !== to) fx.line(cast, _b, 0x8ff0d2, strong ? 0.2 : 0.12, 0.45, 3);
+    fx.flash(cast, 0x8ff0d2, 2.5, 0.25, 2);
+    fx.ring(to.pos, { r0: 0.4, r1: strong ? 4 : 2.2, life: 0.6, color: 0x8ff0d2, intensity: 2 });
+    _b.setY(0.4);
+    fx.burst(_b, strong ? 40 : 16, { color: 0x8ff0d2, color2: 0xfff2b0, intensity: 2.2, speed: [1, 5], dir: UP, spread: 0.35, radius: strong ? 1.2 : 0.7, size: [0.12, 0.3], life: [0.6, 1.3] });
+  }
+
+  /** Cure, on the player's call: a large heal for the Knight they steer, a little for the rest. */
   cure(): boolean {
-    const g = this.members.find((m) => m.def.id === 'ghalus')!;
+    const g = this.ghalus;
     const who = this.cur;
+    if (!who.alive) return false;
     if (!g.alive) this.events.toast('Ghalus has fallen — no healing', 'bad');
-    else if (g === who) this.events.toast('Ghalus cannot Cure while fighting', 'info');
+    else if (g === who) this.events.toast('Ghalus only heals when he fights as an ally', 'info');
     else if (this.cureCharges <= 0) this.events.toast('No Cure left', 'bad');
     else if (this.cureCD > 0) this.events.toast('Cure is not ready', 'info');
     else {
@@ -349,261 +337,78 @@ export class Party {
       this.cureCD = TUNING.cureCooldown;
       this.stats.cures++;
       who.healPending += who.def.hp * TUNING.cureAmount;
-      for (const m of this.members) if (m.alive && m !== who) m.hp = Math.min(m.def.hp, m.hp + m.def.hp * TUNING.cureBench);
+      for (const m of this.members) if (m.alive && m !== who) m.healPending += m.def.hp * TUNING.cureOthers;
       const { fx, audio } = this.world;
       audio.play('heal', { volume: 0.9 });
-      fx.pillar(this.pos, 1.6, 9, 0x8ff0d2, 1.0, 1.4);
-      fx.ring(this.pos, { r0: 0.5, r1: 4, life: 0.7, color: 0x8ff0d2, intensity: 2 });
-      _a.copy(this.pos).setY(0.4);
-      fx.burst(_a, 40, { color: 0x8ff0d2, color2: 0xfff2b0, intensity: 2.2, speed: [1, 5], dir: UP, spread: 0.35, radius: 1.2, size: [0.12, 0.3], life: [0.6, 1.3] });
-      this.world.damageNumber(_a.setY(who.def.height + 0.4), who.def.hp * TUNING.cureAmount, 'heal');
-      // His apparition steps in beside the active Knight to cast.
-      const left = yawLeft(this.yaw, _b);
-      const back = yawForward(this.yaw, _c);
-      g.visual.root.position.copy(this.pos).addScaledVector(left, 1.3).addScaledVector(back, -0.7);
-      g.visual.root.rotation.y = this.yaw;
-      g.visual.root.visible = true;
-      g.visual.setOpacity(0.55);
-      g.visual.act('channel', 0.45, 0.15, 0.6);
-      this.ghost = { member: g, t: 1.2 };
+      // He turns to the Knight he is healing and channels; the light arrives at once.
+      g.startCast(0.3, 0.6, null);
+      g.say('cure', { priority: 1, cooldown: 0 });
+      who.say('healed', { priority: 1, delay: 2.4, cooldown: 0 });
+      this.healFx(g, who, true);
+      fx.pillar(who.pos, 1.6, 9, 0x8ff0d2, 1.0, 1.4);
+      for (const m of this.members) if (m.alive && m !== who && m !== g) this.healFx(g, m, false);
+      this.world.damageNumber(_a.copy(who.pos).setY(who.def.height + 0.4), who.def.hp * TUNING.cureAmount, 'heal');
       return true;
     }
     return false;
   }
 
-  // ---------------------------------------------------------------- taking hits
-
-  /** Called by the game when a boss hazard overlaps the active Knight. */
-  takeHit(h: Omit<Hazard, 'life'>): 'hit' | 'dodged' | 'ignored' {
-    if (this.cinematic || this.state === 'dead') return 'ignored';
-    const m = this.cur;
-    const r = m.def.roll;
-    const rolling = this.state === 'roll' && this.stateT >= r.iStart && this.stateT <= r.iEnd;
-    if (rolling || this.iframes > 0 || this.state === 'down') {
-      if (this.state !== 'down') this.stats.dodges++;
-      // "Perfect" means dodging at the last moment: the blow lands just after the roll starts.
-      const lastMoment = rolling ? this.stateT <= r.iStart + TUNING.perfectWindow : this.state === 'swapIn' && this.stateT <= TUNING.perfectWindow;
-      if (!this.perfect && lastMoment) {
-        this.perfect = true;
-        this.onPerfect(rolling ? 'dodge' : 'swap');
-      }
-      return 'dodged';
-    }
-    const { fx, audio } = this.world;
-    const armored = this.state === 'attack' && !!this.move?.hyperArmor && this.stateT > 0.12;
-    const dmg = h.damage * (armored ? TUNING.hyperArmorSoak : 1);
-    m.hp -= dmg;
-    m.encore = 0;
-    this.sinceHit = 0;
-    this.stats.hitsTaken++;
-    this.stats.taken[h.label] = Math.round((this.stats.taken[h.label] ?? 0) + dmg);
-    const from = h.from ?? h.center;
-    _a.set(this.pos.x - from.x, 0, this.pos.z - from.z);
-    if (_a.lengthSq() < 0.01) yawForward(this.yaw, _a).negate();
-    _a.normalize();
-    _b.copy(this.pos).setY(m.def.height * 0.6);
-    fx.burst(_b, 18, { color: 0xff3030, intensity: 2, speed: [2, 8], size: [0.12, 0.3], life: [0.25, 0.6], gravity: 8 });
-    this.world.damageNumber(_b.setY(m.def.height + 0.3), dmg, 'player');
-    m.visual.tint(0xff2020, 1);
-    fx.shake(h.heavy ? 0.55 : 0.3);
-    this.events.hurt(dmg / m.def.hp, !!h.heavy);
-    if (m.hp <= 0) {
-      this.die();
-      return 'hit';
-    }
-    audio.play('player_hurt', { volume: 0.9 });
-    const knock = h.knock ?? 5;
-    if (armored) {
-      this.vel.addScaledVector(_a, knock * 0.25);
-    } else if (h.heavy) {
-      this.state = 'down';
-      this.stateT = 0;
-      this.move = null;
-      this.vel.copy(_a).multiplyScalar(knock);
-      m.visual.play('down', { duration: TUNING.downTime, fade: 0.06 });
-    } else {
-      this.state = 'hurt';
-      this.stateT = 0;
-      this.move = null;
-      this.vel.copy(_a).multiplyScalar(knock * 0.6);
-      m.visual.play('hurt', { duration: TUNING.hurtTime, fade: 0.04 });
-    }
-    return 'hit';
-  }
-
-  private onPerfect(kind: 'dodge' | 'swap') {
-    const m = this.cur;
-    this.stats.perfects++;
-    this.world.slowmo(0.4, TUNING.perfectDodgeSlow);
-    this.world.audio.play('perfect', { volume: 0.7 });
-    m.stamina = Math.min(m.def.stamina, m.stamina + TUNING.perfectDodgeStamina);
-    if (m.def.id === 'symbeline') m.encore = Math.min(TUNING.encoreMax, m.encore + 2);
-    _a.copy(this.pos).setY(1);
-    this.world.fx.ring(this.pos, { r0: 0.5, r1: 4.5, life: 0.4, color: 0xffffff, intensity: 2.5 });
-    if (kind === 'swap') {
-      this.swapBuff = 6;
-      this.events.toast('PERFECT SWAP', 'good');
-    } else this.events.toast('PERFECT DODGE', 'good');
-  }
-
-  private die() {
-    const m = this.cur;
-    m.hp = 0;
-    m.alive = false;
-    m.encore = m.kindle = 0;
-    this.state = 'dead';
-    this.stateT = 0;
-    this.move = null;
-    this.vel.multiplyScalar(0.3);
-    this.deadTimer = 1.5;
-    m.visual.play('dead', { duration: 1.1, fade: 0.06 });
-    this.world.audio.play('player_down', { volume: 1 });
-    this.events.toast(`${m.def.name.split(' ')[0]} has fallen`, 'bad');
-    if (!this.anyAlive) this.events.defeat();
+  /** Mend, on Ghalus's own initiative as an ally: a smaller heal after a short channel. */
+  mend(target: Knight, done: () => void): boolean {
+    const g = this.ghalus;
+    if (g === this.cur) return false;
+    const casting = g.startCast(0.55, 0.45, () => {
+      done();
+      if (!target.alive) return;
+      const amount = target.def.hp * TUNING.mendAmount;
+      target.healPending += amount;
+      this.stats.mends++;
+      this.healFx(g, target, false);
+      this.world.audio.play('heal', { volume: 0.45, rate: 1.25 });
+      this.world.damageNumber(_a.copy(target.pos).setY(target.def.height + 0.4), amount, 'heal');
+    });
+    if (casting) g.say('mend', { priority: 1, chance: 0.55, cooldown: 14, volume: 1.4 });
+    return casting;
   }
 
   // ---------------------------------------------------------------- dealing damage
 
-  private damageScale(m: Member, move: MoveDef) {
-    let s = this.bonus;
-    if (m.def.id === 'symbeline') s *= 1 + m.encore * TUNING.encorePer;
-    if (move.id === 'deux_h') s *= 1 + m.kindle * TUNING.kindleDamage;
-    if (this.swapBuff > 0) s *= 1.25;
-    return s;
-  }
-
   /** Apply one hit of `move` to a boss part, with all the feedback that goes with it. */
-  hitPart(part: BossPart, move: MoveDef, owner: Member, hitPos: THREE.Vector3, scale = 1): number {
+  hitPart(part: BossPart, move: MoveDef, owner: Knight, hitPos: THREE.Vector3, scale = 1): number {
     const boss = this.getBoss();
     const { fx, audio } = this.world;
-    const dealt = boss.takeDamage(part, move.damage * scale, move.stagger * scale, hitPos);
+    // Allies' hits are drawn and heard, but only the player's own freeze the frame and shake the camera.
+    const lead = owner === this.cur || this.cinematic;
+    const dealt = boss.takeDamage(part, move.damage * scale, move.stagger * scale, hitPos, !lead);
     if (dealt <= 0) return 0;
     this.stats.damage += dealt;
+    if (!lead) this.stats.allyDamage += dealt;
+    owner.dealt += dealt;
     const big = move.damage >= 90;
+    const vol = lead ? 1 : 0.4;
     if (part.weak) {
       fx.burst(hitPos, big ? 60 : 24, { color: 0xffffff, color2: 0xbfe0ff, intensity: 3.5, speed: [4, 20], size: [0.14, 0.45], life: [0.3, 0.9], gravity: 6 });
       fx.flash(hitPos, 0xffffff, big ? 9 : 4, 0.2, 2.5);
-      audio.play('hit_weak', { volume: big ? 1 : 0.7 });
+      audio.play('hit_weak', { volume: (big ? 1 : 0.7) * vol });
     } else if (part.armor) {
       fx.burst(hitPos, 8, { color: 0x9aa4c8, intensity: 1.2, speed: [3, 10], size: [0.08, 0.2], life: [0.2, 0.5], gravity: 14 });
-      audio.play('hit', { volume: 0.45, rate: 1.5 });
+      audio.play('hit', { volume: 0.45 * vol, rate: 1.5 });
     } else {
       fx.burst(hitPos, big ? 40 : 16, { color: move.color, color2: 0xffffff, intensity: 2.5, speed: [4, 16], size: [0.12, 0.35], life: [0.25, 0.7], gravity: 12 });
       fx.flash(hitPos, move.color, big ? 6 : 3, 0.18, 1.8);
-      audio.play(big ? 'hit_heavy' : 'hit', { volume: big ? 1 : 0.75 });
+      audio.play(big ? 'hit_heavy' : 'hit', { volume: (big ? 1 : 0.75) * vol });
     }
-    if (move.hitstop) this.world.hitstop(move.hitstop * (part.weak ? 1.4 : 1));
-    if (move.shake) fx.shake(move.shake);
+    if (lead) {
+      if (move.hitstop) this.world.hitstop(move.hitstop * (part.weak ? 1.4 : 1));
+      if (move.shake) fx.shake(move.shake);
+    }
     if (owner.def.id === 'symbeline') owner.encore = Math.min(TUNING.encoreMax, owner.encore + 1);
     if (move.id === 'deux_l') owner.kindle = Math.min(TUNING.kindleMax, owner.kindle + 1);
     return dealt;
   }
 
-  private meleeHit(move: MoveDef) {
-    const boss = this.getBoss();
-    const fwd = yawForward(this.yaw, _a);
-    const cx = this.pos.x + fwd.x * move.reach!;
-    const cz = this.pos.z + fwd.z * move.reach!;
-    _b.set(cx, 0.4, cz);
-    _c.set(cx, 3.3, cz);
-    let best: BossPart | null = null;
-    for (const p of boss.parts) {
-      if (distPointSegment(p.pos, _b, _c) > move.radius! + p.r) continue;
-      if (!best || Number(p.weak) > Number(best.weak) || (p.weak === best.weak && p.mult > best.mult)) best = p;
-    }
-    if (!best) return;
-    this.hitDone = true;
-    // Contact point: on the part's surface, toward the attacker.
-    const hit = new THREE.Vector3(this.pos.x, clamp(best.pos.y, 0.8, 2.6), this.pos.z).sub(best.pos);
-    const d = hit.length();
-    hit.multiplyScalar(Math.min(1, best.r / Math.max(0.01, d))).add(best.pos);
-    this.hitPart(best, move, this.cur, hit, this.damageScale(this.cur, move));
-  }
-
-  private fire(move: MoveDef) {
-    const m = this.cur;
-    const { fx, audio } = this.world;
-    const cast = m.visual.castPoint(new THREE.Vector3());
-    const scale = this.damageScale(m, move);
-    switch (move.kind) {
-      case 'melee': {
-        audio.play(move.sfx, { volume: 0.7 });
-        if (move.arc) {
-          _a.copy(this.pos).setY(m.def.height * 0.58);
-          fx.slashArc({ pos: _a, yaw: this.yaw, radius: move.arc.radius, color: move.color, duration: move.active + 0.05, tilt: move.arc.tilt, mirror: move.arc.mirror, sweep: move.arc.sweep, pitch: move.arc.pitch, intensity: move.damage > 150 ? 2.6 : 1.7 });
-        }
-        if (move.id === 'sig_h') {
-          // The heavy cleave cracks the ground in front of him.
-          const f = yawForward(this.yaw, _a).multiplyScalar(move.reach!).add(this.pos);
-          fx.ring(f, { r0: 0.5, r1: 4.5, life: 0.45, color: 0x8e2cff, intensity: 2.5 });
-          fx.puff(f.setY(0.3), 10, { speed: [2, 6] });
-          fx.burst(f, 30, { color: 0x8e2cff, color2: 0xff2a55, intensity: 2.5, speed: [3, 14], dir: UP, spread: 0.7, size: [0.15, 0.4], life: [0.3, 0.8], gravity: 12 });
-        }
-        break;
-      }
-      case 'bolt': {
-        audio.play(move.sfx, { volume: 0.6 });
-        this.spawnProjectile('ember', move, cast, scale);
-        break;
-      }
-      case 'boomerang': {
-        audio.play(move.sfx, { volume: 0.7 });
-        this.spawnProjectile('chakram', move, cast, scale, 1);
-        this.spawnProjectile('chakram', move, cast, scale, -1);
-        break;
-      }
-      case 'ray': {
-        audio.play(move.sfx, { volume: 0.7 });
-        const part = this.aimPart;
-        const end = part ? part.pos.clone() : yawForward(this.yaw, new THREE.Vector3()).multiplyScalar(30).add(cast);
-        if (part) {
-          // Stop the ray on the part's surface.
-          _a.subVectors(cast, end).normalize();
-          end.addScaledVector(_a, part.r * 0.9);
-          this.hitPart(part, move, m, end, scale);
-        }
-        fx.line(cast, end, move.color, 0.16, 0.22, 4);
-        fx.flash(cast, move.color, 2, 0.15, 2);
-        break;
-      }
-      case 'aoe': {
-        this.detonate(move, m, scale);
-        break;
-      }
-    }
-  }
-
-  private detonate(move: MoveDef, m: Member, scale: number) {
-    const boss = this.getBoss();
-    const { fx, audio } = this.world;
-    const c = this.aoeTarget;
-    const R = move.aoeRadius!;
-    if (move.id === 'deux_h') {
-      fx.blast(c, R * 1.25, 0xff5a1a, 0.55, 3);
-      fx.flash(c, 0xffb060, R * 5, 0.45, 3);
-      fx.burst(c, 140, { color: 0xff4a10, color2: 0xffd070, intensity: 3.2, speed: [5, 30], size: [0.2, 0.7], life: [0.4, 1.3], gravity: 5 });
-      fx.puff(c, 20, { color: 0x30201c, color2: 0x151010, speed: [2, 9], size: [2, 4.5], life: [0.8, 1.8], radius: R * 0.5 });
-      audio.play('explode', { volume: 1 });
-      m.kindle = 0;
-      const hit = boss.partsInSphere(c, R)[0];
-      if (hit) this.hitPart(hit, move, m, hit.pos.clone().lerp(c, 0.5), scale);
-      else fx.shake(0.4);
-    } else {
-      // Sanctum: a pillar of light, hitting whatever stands in the column.
-      const ground = _a.set(c.x, 0, c.z);
-      fx.pillar(ground, R, 46, 0xfff2b0, 0.9, 2.6);
-      fx.ring(ground, { r0: R * 0.3, r1: R * 1.4, life: 0.6, color: 0xfff2b0, intensity: 2.5 });
-      fx.burst(_b.set(c.x, 1, c.z), 90, { color: 0xfff2b0, color2: 0xffffff, intensity: 3, speed: [3, 20], dir: UP, spread: 0.4, radius: R * 0.8, size: [0.15, 0.5], life: [0.5, 1.4] });
-      audio.play('holy_burst', { volume: 1 });
-      const hit = boss.parts
-        .filter((p) => Math.hypot(p.pos.x - c.x, p.pos.z - c.z) < R + p.r)
-        .sort((p, q) => Number(q.weak) - Number(p.weak) || q.mult - p.mult)[0];
-      if (hit) this.hitPart(hit, move, m, hit.pos.clone(), scale);
-      else fx.shake(0.3);
-    }
-  }
-
-  private spawnProjectile(kind: Projectile['kind'], move: MoveDef, from: THREE.Vector3, bonus: number, curve = 0) {
+  /** Send a bolt or a chakram on its way. */
+  launch(owner: Knight, kind: Projectile['kind'], move: MoveDef, from: THREE.Vector3, target: BossPart | null, bonus: number, curve = 0) {
     let mesh: THREE.Object3D;
     if (kind === 'ember') {
       const sprite = new THREE.Sprite(
@@ -614,16 +419,15 @@ export class Party {
     } else {
       mesh = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.045, 8, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.3, 0.6) }));
     }
-    const target = this.aimPart;
-    const goal = target ? target.pos.clone() : yawForward(this.yaw, new THREE.Vector3()).multiplyScalar(move.range ?? 14).add(from);
-    if (!target && kind === 'chakram') goal.copy(yawForward(this.yaw, _a)).multiplyScalar(13).add(from);
+    const goal = target ? target.pos.clone() : yawForward(owner.yaw, new THREE.Vector3()).multiplyScalar(move.range ?? 14).add(from);
+    if (!target && kind === 'chakram') goal.copy(yawForward(owner.yaw, _a)).multiplyScalar(13).add(from);
     const speed = kind === 'ember' ? 38 : 30;
     const vel = goal.clone().sub(from).normalize();
-    if (curve) vel.addScaledVector(yawLeft(this.yaw, _a), curve * 0.5).normalize();
+    if (curve) vel.addScaledVector(yawLeft(owner.yaw, _a), curve * 0.5).normalize();
     vel.multiplyScalar(speed);
     mesh.position.copy(from);
     this.fxGroup.add(mesh);
-    this.projectiles.push({ kind, pos: from.clone(), vel, target, goal, life: kind === 'ember' ? 2.2 : 3.2, move, owner: this.cur, bonus, mesh, returning: false, hitOut: false, hitBack: false, curve });
+    this.projectiles.push({ kind, pos: from.clone(), vel, target, goal, life: kind === 'ember' ? 2.2 : 3.2, move, owner, bonus, mesh, returning: false, hitOut: false, hitBack: false });
   }
 
   private updateProjectiles(dt: number) {
@@ -657,7 +461,8 @@ export class Party {
           p.vel.lerp(_a, 1 - Math.exp(-6 * dt));
           if (d < 1.4 || p.life < 2.55) p.returning = true;
         } else {
-          _a.copy(this.pos).setY(1.2).sub(p.pos);
+          // Back to the hand that threw it.
+          _a.copy(p.owner.pos).setY(1.2).sub(p.pos);
           const d = _a.length();
           _a.normalize().multiplyScalar(speed);
           p.vel.lerp(_a, 1 - Math.exp(-7 * dt));
@@ -692,265 +497,56 @@ export class Party {
 
   update(dt: number, camYaw: number) {
     const input = this.input;
-    const m = this.cur;
-    const def = m.def;
-    const { fx } = this.world;
-    this.stateT += dt;
-    this.iframes = Math.max(0, this.iframes - dt);
     this.swapCD = Math.max(0, this.swapCD - dt);
     this.cureCD = Math.max(0, this.cureCD - dt);
-    this.swapBuff = Math.max(0, this.swapBuff - dt);
-    this.sinceHit += dt;
-    this.sprinting = false;
+    this.getBoss().blockers(this.blockers);
 
-    // Movement intent in world space
-    let ix = 0;
-    let iz = 0;
+    // The player's hands: movement relative to the camera, plus the party-wide commands.
+    const c = this.controls;
+    c.moveX = c.moveZ = 0;
+    c.sprint = false;
     if (!this.cinematic) {
       if (input.worldMove) {
-        ix = input.worldMove.x;
-        iz = input.worldMove.z;
+        c.moveX = input.worldMove.x;
+        c.moveZ = input.worldMove.z;
       } else {
         const s = Math.sin(camYaw);
-        const c = Math.cos(camYaw);
-        ix = s * input.move.y - c * input.move.x;
-        iz = c * input.move.y + s * input.move.x;
+        const k = Math.cos(camYaw);
+        c.moveX = s * input.move.y - k * input.move.x;
+        c.moveZ = k * input.move.y + s * input.move.x;
       }
-    }
-    const mag = Math.min(1, Math.hypot(ix, iz));
-
-    if (!this.cinematic) {
+      c.sprint = input.sprint;
       if (input.consume('lock')) this.toggleLock();
       if (input.consume('lockNext')) this.cycleLock();
+      this.swapInputs();
+      if (input.consume('heal')) this.cure();
     }
     this.validateLock();
 
-    switch (this.state) {
-      case 'free': {
-        if (this.cinematic) {
-          this.vel.multiplyScalar(Math.max(0, 1 - 12 * dt));
-          m.visual.play('idle');
-          break;
-        }
-        if (this.swapInputs()) break;
-        if (input.consume('heal')) this.cure();
-        if (input.consume('roll') && m.stamina > 0) {
-          this.startRoll(ix, iz, mag);
-          break;
-        }
-        if (input.consume('light') && this.startMove(def.light[0], 0)) break;
-        if (input.consume('heavy') && this.startMove(def.heavy, -1)) break;
-        const sprint = input.sprint && mag > 0.2 && m.stamina > 0;
-        this.sprinting = sprint;
-        const speed = (sprint ? def.sprint : def.speed) * mag;
-        if (sprint) {
-          m.stamina -= TUNING.sprintDrain * dt;
-          m.staminaDelay = 0.3;
-        }
-        const k = 1 - Math.exp(-14 * dt);
-        this.vel.x += (ix / Math.max(0.001, mag) * speed - this.vel.x) * k;
-        this.vel.z += (iz / Math.max(0.001, mag) * speed - this.vel.z) * k;
-        if (this.lock && !sprint) {
-          this.yaw = dampAngle(this.yaw, yawOf(this.lock.pos.x - this.pos.x, this.lock.pos.z - this.pos.z), 14, dt);
-        } else if (mag > 0.1) this.yaw = dampAngle(this.yaw, yawOf(ix, iz), 13, dt);
-        if (mag > 0.1) {
-          m.visual.play('move');
-          m.visual.setMoveSpeed(speed / def.speed);
-        } else m.visual.play('idle');
-        break;
-      }
-
-      case 'attack': {
-        const move = this.move!;
-        const w = this.moveWindup;
-        const t = this.stateT;
-        const end = w + move.active + move.recovery;
-        if (input.consume('light', 0.45)) this.queued = 'light';
-        if (input.consume('heavy', 0.45)) this.queued = 'heavy';
-        if (input.consume('roll', 0.35)) this.queued = 'roll';
-        if (this.swapInputs()) break;
-        if (input.consume('heal')) this.cure();
-        // Keep turning toward the target until the blow commits.
-        if (t < w && this.aimPart) {
-          this.yaw = moveAngle(this.yaw, yawOf(this.aimPart.pos.x - this.pos.x, this.aimPart.pos.z - this.pos.z), (move.kind === 'melee' ? 5 : 9) * dt);
-        }
-        // Step into melee swings.
-        const fwd = yawForward(this.yaw, _a);
-        const lungeStart = w * 0.5;
-        const lungeEnd = w + move.active;
-        if (move.lunge && t > lungeStart && t < lungeEnd) {
-          const v = move.lunge / (lungeEnd - lungeStart);
-          this.vel.set(fwd.x * v, 0, fwd.z * v);
-        } else this.vel.multiplyScalar(Math.max(0, 1 - 16 * dt));
-
-        if (move.kind === 'aoe' && t < w) {
-          if (t < w - 0.25) this.updateAoeTarget();
-          // Gathering light at the staff and a growing mark on the target.
-          const cast = m.visual.castPoint(_b);
-          fx.burst(cast, 2, { color: move.color, intensity: 3, speed: [-5, -2], radius: 1.6, size: [0.12, 0.3], life: [0.25, 0.4] });
-          const k = t / w;
-          if (rand() < 0.5) fx.burst(this.aoeTarget, 1, { color: move.color, intensity: 2 + k * 3, speed: [-(4 + k * 6), -2], radius: move.aoeRadius! * (1 - k * 0.5), size: [0.2, 0.5], life: [0.25, 0.45] });
-        }
-        if (move.id === 'sig_h' && t < w) {
-          _b.copy(this.pos).setY(1.2);
-          fx.burst(_b, 2, { color: 0x8e2cff, color2: 0xff2a55, intensity: 2.2, speed: [-6, -3], radius: 2.4, size: [0.12, 0.3], life: [0.3, 0.5] });
-        }
-        if (!this.fired && t >= w) {
-          this.fired = true;
-          this.fire(move);
-        }
-        if (move.kind === 'melee' && t >= w && t < w + move.active + 0.03 && !this.hitDone) this.meleeHit(move);
-
-        const cancelAt = w + move.active + move.recovery * (move.cancelAt ?? 0.45);
-        if (t >= cancelAt && this.queued) {
-          const q = this.queued;
-          this.queued = null;
-          if (q === 'roll') {
-            if (m.stamina > 0) {
-              this.startRoll(ix, iz, mag);
-              break;
-            }
-          } else if (q === 'light') {
-            const next = this.comboIndex >= 0 ? (this.comboIndex + 1) % def.light.length : 0;
-            if (this.startMove(def.light[next], next)) break;
-          } else if (this.startMove(def.heavy, -1)) break;
-        }
-        if (t >= end) {
-          this.state = 'free';
-          this.move = null;
-        }
-        break;
-      }
-
-      case 'roll': {
-        const r = def.roll;
-        const k = this.stateT / r.duration;
-        const v = (r.distance / r.duration) * (1.6 - 1.2 * Math.min(1, k));
-        this.vel.set(this.rollDir.x * v, 0, this.rollDir.z * v);
-        if (r.kind === 'blink') m.visual.root.visible = !(k > 0.1 && k < 0.82);
-        if (input.consume('light', 0.3)) this.queued = 'light';
-        if (input.consume('heavy', 0.3)) this.queued = 'heavy';
-        if (k >= 1) {
-          m.visual.root.visible = true;
-          if (r.kind === 'blink') this.blinkFx();
-          this.state = 'free';
-          const q = this.queued;
-          this.queued = null;
-          if (q === 'light') this.startMove(def.light[0], 0);
-          else if (q === 'heavy') this.startMove(def.heavy, -1);
-        }
-        break;
-      }
-
-      case 'swapIn': {
-        this.vel.multiplyScalar(Math.max(0, 1 - 10 * dt));
-        if (input.consume('light', 0.4)) this.queued = 'light';
-        if (input.consume('heavy', 0.4)) this.queued = 'heavy';
-        if (this.stateT >= 0.3) {
-          this.state = 'free';
-          const q = this.queued;
-          this.queued = null;
-          // Arriving with an attack already called hits harder.
-          if (q === 'light') this.startMove(def.light[0], 0, TUNING.swapAttackBonus);
-          else if (q === 'heavy') this.startMove(def.heavy, -1, TUNING.swapAttackBonus);
-        }
-        break;
-      }
-
-      case 'hurt': {
-        this.vel.multiplyScalar(Math.max(0, 1 - 6 * dt));
-        if (this.stateT >= TUNING.hurtTime) this.state = 'free';
-        break;
-      }
-
-      case 'down': {
-        this.vel.multiplyScalar(Math.max(0, 1 - 4 * dt));
-        if (this.stateT >= TUNING.downTime) {
-          this.state = 'free';
-          this.iframes = 0.35;
-        }
-        break;
-      }
-
-      case 'dead': {
-        this.vel.multiplyScalar(Math.max(0, 1 - 5 * dt));
-        this.deadTimer -= dt;
-        if (this.deadTimer <= 0 && this.anyAlive) {
-          m.visual.root.visible = false;
-          this.trySwap(this.nextAlive(1), true);
-        }
-        break;
-      }
+    // The Knight being steered has fallen: after a beat, the controls pass to the next one standing.
+    if (!this.cur.alive && this.anyAlive) {
+      this.deadTimer -= dt;
+      if (this.deadTimer <= 0) this.trySwap(this.nextAlive(1), true);
     }
 
-    // Resources
-    for (const mm of this.members) {
-      if (!mm.alive) continue;
-      const isActive = mm === this.cur;
-      mm.staminaDelay -= dt;
-      if (!isActive) mm.stamina = Math.min(mm.def.stamina, mm.stamina + TUNING.offFieldStaminaRegen * dt);
-      else if (mm.staminaDelay <= 0 && this.state !== 'attack' && this.state !== 'roll') {
-        mm.stamina = Math.min(mm.def.stamina, mm.stamina + TUNING.staminaRegen * dt);
+    this.members.forEach((k, i) => {
+      // A cinematic has everyone standing by, unless it is walking them somewhere.
+      let scripted: Controls | null = null;
+      if (this.cinematic && this.march && k.alive) {
+        const amount = Math.min(1, this.march.pace / k.def.speed);
+        scripted = this.marching;
+        this.marching.moveX = this.march.x * amount;
+        this.marching.moveZ = this.march.z * amount;
       }
-      if (mm.healPending > 0) {
-        const h = Math.min(mm.healPending, mm.def.hp * 0.5 * dt);
-        mm.healPending -= h;
-        mm.hp = Math.min(mm.def.hp, mm.hp + h);
+      if (k === this.cur) {
+        k.aim = this.lock;
+        k.update(dt, this.cinematic ? scripted : c);
+      } else {
+        const brain = this.brains[i];
+        if (!this.cinematic) brain.update(dt);
+        k.update(dt, this.cinematic ? scripted : brain);
       }
-    }
-    const ghalus = this.members.find((x) => x.def.id === 'ghalus')!;
-    if (ghalus.alive && ghalus !== this.cur) {
-      for (const mm of this.members) {
-        if (!mm.alive) continue;
-        if (mm === this.cur) {
-          if (this.sinceHit > TUNING.regenDelay) mm.hp = Math.min(mm.def.hp, mm.hp + TUNING.regenActive * dt);
-        } else mm.hp = Math.min(mm.def.hp, mm.hp + TUNING.regenBench * dt);
-      }
-    }
-
-    // Integrate and collide
-    this.pos.addScaledVector(this.vel, dt);
-    const r = Math.hypot(this.pos.x, this.pos.z);
-    const maxR = ARENA_RADIUS - 1.2;
-    if (r > maxR) this.pos.multiplyScalar(maxR / r);
-    for (const b of this.getBoss().blockers(this.blockers)) {
-      const dx = this.pos.x - b.x;
-      const dz = this.pos.z - b.z;
-      const d = Math.hypot(dx, dz);
-      const min = b.r + 0.45;
-      if (d < min) {
-        const push = d > 0.001 ? (min - d) / d : 0;
-        this.pos.x += dx * push || 0.01;
-        this.pos.z += dz * push;
-      }
-    }
-    this.pos.y = 0;
-
+    });
     this.updateProjectiles(dt);
-    this.syncVisual(dt);
-
-    if (this.ghost) {
-      this.ghost.t -= dt;
-      const g = this.ghost.member;
-      g.visual.update(dt);
-      g.visual.setOpacity(clamp(this.ghost.t * 1.5, 0, 0.55));
-      if (this.ghost.t <= 0) {
-        g.visual.root.visible = false;
-        g.visual.setOpacity(1);
-        this.ghost = null;
-      }
-    }
-  }
-
-  private syncVisual(dt: number) {
-    const v = this.cur.visual;
-    v.root.position.copy(this.pos);
-    v.root.rotation.y = this.yaw;
-    if (dt > 0) v.update(dt);
-  }
-
-  /** Turn toward a point (used while a cinematic has the controls). */
-  face(p: THREE.Vector3, dt: number) {
-    this.yaw = dampAngle(this.yaw, yawOf(p.x - this.pos.x, p.z - this.pos.z), 8, dt);
   }
 }

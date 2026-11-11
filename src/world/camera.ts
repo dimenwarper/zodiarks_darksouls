@@ -22,6 +22,7 @@ export class CameraRig {
   private dist = 7.2;
   private blocked = 7.2;
   private snap = true;
+  private glideT = 0;
 
   constructor(aspect: number) {
     this.camera = new THREE.PerspectiveCamera(this.fov, aspect, 0.2, 1500);
@@ -35,6 +36,11 @@ export class CameraRig {
   /** Jump straight to the target framing on the next update (after cinematics, respawns). */
   snapNext() {
     this.snap = true;
+  }
+
+  /** Follow more loosely for a moment, so a change of Knight reads as a pan rather than a cut. */
+  glide(seconds: number) {
+    this.glideT = seconds;
   }
 
   update(
@@ -93,12 +99,14 @@ export class CameraRig {
       this.blocked = damp(this.blocked, reach < this.dist ? reach : this.dist, reach < this.blocked ? 30 : 4, dt);
       const wantPos = _look.copy(_pivot).addScaledVector(_dir, -Math.min(this.dist, this.blocked));
       wantPos.y = Math.max(0.35, wantPos.y);
-      const k = this.snap ? 1 : 1 - Math.exp(-14 * dt);
+      this.glideT = Math.max(0, this.glideT - dt);
+      const follow = this.glideT > 0 ? 5 : 14;
+      const k = this.snap ? 1 : 1 - Math.exp(-follow * dt);
       this.pos.lerp(wantPos, k);
       // Aim past the player so the target side of the screen is open.
       const aim = _look.copy(_pivot).addScaledVector(_dir, 9);
       aim.y += 0.5;
-      this.lookAt.lerp(aim, this.snap ? 1 : 1 - Math.exp(-16 * dt));
+      this.lookAt.lerp(aim, this.snap ? 1 : 1 - Math.exp(-(follow + 2) * dt));
       cam.fov = damp(cam.fov, this.fov + (sprinting ? 4 : 0), 4, dt);
       this.snap = false;
     }

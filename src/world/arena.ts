@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { TAU, damp, rand, setSeed } from '../core/math';
 import { makeGlowTexture } from '../core/fx';
+import type { Props } from './props';
+import { Sky } from './sky';
 
 export const ARENA_RADIUS = 40;
 
-/** Moonlit ruin: a zodiac wheel floor ringed by broken pillars, under a moon that eclipses in phase 2. */
+/** Moonlit ruin: a zodiac wheel floor ringed by broken pillars, under the galaxy and a moon that eclipses in phase 2. */
 export class Arena {
   group = new THREE.Group();
   moonLight: THREE.DirectionalLight;
@@ -14,13 +16,16 @@ export class Arena {
   private moonGlow: THREE.Sprite;
   private shade: THREE.Mesh;
   private corona: THREE.Sprite;
-  private stars: THREE.Points;
-  private skyMat: THREE.ShaderMaterial;
+  readonly sky = new Sky();
   private fog: THREE.FogExp2;
   private eclipse = 0;
   private eclipseTarget = 0;
   private time = 0;
   private braziers: { light: THREE.PointLight; flame: THREE.Mesh; phase: number }[] = [];
+  /** The ruins as rough spheres, so the camera can keep out from behind (or inside) them. */
+  readonly solids: { pos: THREE.Vector3; r: number }[] = [];
+  /** Columns, statues and fire bowls around the rim. */
+  private ruins = new THREE.Group();
   private moonDir = new THREE.Vector3(-0.42, 0.56, -0.71).normalize();
 
   private cool = {
@@ -44,48 +49,9 @@ export class Arena {
     scene.fog = this.fog;
     scene.background = new THREE.Color(0x02030a);
 
-    // Sky dome
-    this.skyMat = new THREE.ShaderMaterial({
-      uniforms: { uTop: { value: this.cool.skyTop.clone() }, uHorizon: { value: this.cool.skyHorizon.clone() } },
-      vertexShader: /* glsl */ `varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: /* glsl */ `
-        uniform vec3 uTop; uniform vec3 uHorizon; varying vec3 vDir;
-        void main() {
-          float h = clamp(vDir.y, -0.2, 1.0);
-          vec3 c = mix(uHorizon, uTop, pow(smoothstep(-0.05, 0.75, h), 0.6));
-          gl_FragColor = vec4(c, 1.0);
-        }`,
-      side: THREE.BackSide,
-      depthWrite: false,
-      fog: false,
-    });
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 16), this.skyMat);
-    sky.renderOrder = -10;
-    this.group.add(sky);
-
-    // Stars
-    setSeed(77);
-    const n = 2600;
-    const sp = new Float32Array(n * 3);
-    const sc = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const u = rand(0.02, 1);
-      const th = rand(TAU);
-      const s = Math.sqrt(1 - u * u);
-      sp.set([s * Math.cos(th) * 560, u * 560, s * Math.sin(th) * 560], i * 3);
-      const b = 0.5 + rand() * rand() * 2.2;
-      const tint = rand();
-      sc.set([b * (0.8 + tint * 0.2), b * 0.9, b * (1.0 - tint * 0.25)], i * 3);
-    }
-    const sg = new THREE.BufferGeometry();
-    sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-    sg.setAttribute('color', new THREE.BufferAttribute(sc, 3));
-    this.stars = new THREE.Points(
-      sg,
-      new THREE.PointsMaterial({ size: 2.4, sizeAttenuation: false, vertexColors: true, fog: false, transparent: true, depthWrite: false }),
-    );
-    this.stars.renderOrder = -9;
-    this.group.add(this.stars);
+    this.sky.top.copy(this.cool.skyTop);
+    this.sky.horizon.copy(this.cool.skyHorizon);
+    this.group.add(this.sky.group);
 
     // Moon, its glow, and the disc that eclipses it
     const moonDir = this.moonDir;
@@ -154,8 +120,79 @@ export class Arena {
     skirt.position.y = -15;
     this.group.add(skirt);
 
+    this.group.add(this.ruins);
     this.buildRuins();
     this.buildDistance();
+  }
+
+  /**
+   * Rebuild the rim from the generated models, once they have loaded: a column on every
+   * line between two signs of the floor's wheel, a hooded star-watcher over each sign,
+   * and a smashed plinth over the thirteenth. With no models on disk the plain ruin stays.
+   */
+  dress(props: Props) {
+    if (!props.count) return;
+    this.ruins.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
+    });
+    this.ruins.clear();
+    this.braziers.length = 0;
+    this.solids.length = 0;
+    setSeed(4242);
+    const stone = new THREE.MeshStandardMaterial({ color: 0x2a2f45, roughness: 0.9, metalness: 0.05, flatShading: true });
+    const R = ARENA_RADIUS + 3.5;
+    /** A model sized to a box, or a plain block of the same size when it is missing. */
+    const make = (name: string, w: number, h: number, d: number, mode: 'fill' | 'height' | 'width' = 'fill') => {
+      const o = props.fit(name, w, h, d, { mode });
+      if (o) {
+        const size = o.userData.size as THREE.Vector3;
+        return { o, h: size.y, w: Math.max(size.x, size.z) };
+      }
+      const block = new THREE.Mesh(new THREE.CylinderGeometry(w / 2.4, w / 2.2, h, 8), stone);
+      block.castShadow = block.receiveShadow = true;
+      return { o: block as THREE.Object3D, h, w: Math.max(w, d) };
+    };
+    const put = (item: { o: THREE.Object3D; h: number; w: number }, angle: number, r: number, yaw: number) => {
+      item.o.position.set(Math.cos(angle) * r, item.h / 2, Math.sin(angle) * r);
+      item.o.rotation.y = yaw;
+      this.ruins.add(item.o);
+      this.solids.push({ pos: new THREE.Vector3(item.o.position.x, Math.min(item.h / 2, 1.8), item.o.position.z), r: item.w / 2 });
+    };
+    /** The yaw that turns a model's front toward the middle of the arena. */
+    const inward = (angle: number) => Math.atan2(-Math.cos(angle), -Math.sin(angle));
+    const SIGNS = 13;
+    for (let i = 0; i < SIGNS; i++) {
+      // The same angles the floor's sectors are drawn at.
+      const edge = (i / SIGNS) * TAU - Math.PI / 2;
+      const mid = edge + TAU / SIGNS / 2;
+
+      if (rand() < 0.38) {
+        put(make('arena_stump', 3.7, rand(6, 9.5), 3.7), edge, R, rand(TAU));
+        if (rand() < 0.8) {
+          // The drum that fell from it, lying nearer the middle.
+          const len = rand(3, 4.4);
+          const drum = make('arena_drum', len, 2.5, 2.5);
+          put(drum, edge + rand(-0.07, 0.07), R - rand(3.6, 5), rand(TAU));
+        }
+      } else put(make('arena_pillar', 3.7, rand(15.5, 18.5), 3.7), edge, R, inward(edge) + Math.floor(rand(4)) * (Math.PI / 2));
+
+      if (i < SIGNS - 1) put(make('arena_statue', 4, 11.5, 4, 'height'), mid, R + 0.4, inward(mid));
+      else put(make('arena_plinth', 5.4, 2.6, 5.4, 'width'), mid, R + 0.4, inward(mid));
+
+      // A bowl of cold starfire before every other watcher, and before the empty plinth.
+      if (i % 2 === 0) {
+        const bowl = make('arena_brazier', 2.3, 1.7, 2.3, 'width');
+        put(bowl, mid, R - 3.9, rand(TAU));
+        const { x, z } = bowl.o.position;
+        const flame = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 1.2, 3.2) }));
+        flame.position.set(x, bowl.h + 0.35, z);
+        const light = new THREE.PointLight(0x5f8dff, 22, 22, 1.8);
+        light.position.set(x, bowl.h + 0.9, z);
+        this.ruins.add(flame, light);
+        this.braziers.push({ light, flame, phase: rand(TAU) });
+      }
+    }
   }
 
   private buildRuins() {
@@ -177,14 +214,14 @@ export class Arena {
       for (const m of [base, shaft]) {
         m.castShadow = true;
         m.receiveShadow = true;
-        this.group.add(m);
+        this.ruins.add(m);
       }
       if (!broken) {
         const cap = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 3.2), dark);
         cap.position.set(Math.sin(a) * r, 1.2 + h + 0.55, Math.cos(a) * r);
         cap.rotation.y = a;
         cap.castShadow = true;
-        this.group.add(cap);
+        this.ruins.add(cap);
       } else if (rand() < 0.7) {
         // Fallen drum beside the stump
         const drum = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, rand(2, 4), 10), stone);
@@ -194,7 +231,7 @@ export class Arena {
         drum.rotation.set(Math.PI / 2, 0, rand(TAU));
         drum.castShadow = true;
         drum.receiveShadow = true;
-        this.group.add(drum);
+        this.ruins.add(drum);
       }
       // A brazier of cold starfire on every other standing pillar base
       if (i % 4 === 0) {
@@ -210,7 +247,7 @@ export class Arena {
         flame.position.set(bx, 1.95, bz);
         const light = new THREE.PointLight(0x5f8dff, 22, 22, 1.8);
         light.position.set(bx, 2.4, bz);
-        this.group.add(bowl, flame, light);
+        this.ruins.add(bowl, flame, light);
         this.braziers.push({ light, flame, phase: rand(TAU) });
       }
     }
@@ -247,8 +284,9 @@ export class Arena {
     this.moonLight.intensity = 2.4 - 0.7 * k;
     this.fog.color.lerpColors(this.cool.fog, this.hot.fog, k);
     (this.scene.background as THREE.Color).copy(this.fog.color);
-    this.skyMat.uniforms.uTop.value.lerpColors(this.cool.skyTop, this.hot.skyTop, k);
-    this.skyMat.uniforms.uHorizon.value.lerpColors(this.cool.skyHorizon, this.hot.skyHorizon, k);
+    this.sky.top.lerpColors(this.cool.skyTop, this.hot.skyTop, k);
+    this.sky.horizon.lerpColors(this.cool.skyHorizon, this.hot.skyHorizon, k);
+    this.sky.update(dt, k);
     this.floorMat.emissive.lerpColors(this.cool.glyph, this.hot.glyph, k);
     this.floorMat.emissiveIntensity = 1.3 + Math.sin(this.time * 1.3) * 0.25 + k * 0.9;
     this.hemi.intensity = 0.75 - 0.2 * k;
@@ -262,7 +300,6 @@ export class Arena {
     this.shade.visible = k > 0.01;
     (this.moonGlow.material as THREE.SpriteMaterial).opacity = 0.55 * (1 - k);
     (this.corona.material as THREE.SpriteMaterial).opacity = k * 0.9;
-    (this.stars.material as THREE.PointsMaterial).opacity = 0.85 + 0.15 * Math.sin(this.time * 0.7);
 
     for (const b of this.braziers) {
       const f = 0.8 + 0.2 * Math.sin(this.time * 9 + b.phase) + 0.1 * Math.sin(this.time * 23 + b.phase * 2);

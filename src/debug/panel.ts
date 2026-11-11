@@ -1,9 +1,10 @@
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
 import type { Game } from '../game';
-import { BOSS_TUNING } from '../boss/colossus';
+import { BOSS_LOOK, BOSS_TUNING } from '../boss/colossus';
 import { PARTY, TUNING } from '../chars/defs';
 import { Bot } from './bot';
+import { VOICE_TUNING } from '../core/voice';
 
 /** Tuning panel (toggle with the backquote key) plus the hooks automated tests drive. */
 export function installDebug(game: Game) {
@@ -49,10 +50,7 @@ export function installDebug(game: Game) {
       game.boss.takeDamage(game.boss.part('core'), 50, 0, game.boss.corePos);
     },
     healAll: () => {
-      for (const m of game.party.members) {
-        m.alive = true;
-        m.hp = m.def.hp;
-      }
+      for (const m of game.party.members) m.revive();
     },
     restart: () => game.start(),
   };
@@ -76,12 +74,27 @@ export function installDebug(game: Game) {
   const p = gui.addFolder('Knights');
   p.add(TUNING, 'staminaRegen', 10, 60, 1);
   p.add(TUNING, 'swapCooldown', 0.2, 4, 0.1);
-  p.add(TUNING, 'swapIFrames', 0, 1, 0.05);
+  p.add(TUNING, 'tagBonus', 1, 2.5, 0.05).name('tag-in first hit ×');
   p.add(TUNING, 'perfectWindow', 0.05, 0.4, 0.01).name('perfect dodge window');
   p.add(TUNING, 'perfectDodgeSlow', 0.1, 1, 0.05);
-  p.add(TUNING, 'regenActive', 0, 8, 0.1).name('Ghalus regen /s');
   for (const d of PARTY) p.add(d.roll, 'iEnd', 0.1, 0.6, 0.01).name(`${d.name.split(' ')[0]} dodge i-frames`);
   p.add(state, 'healAll').name('revive + heal all');
+  const a = gui.addFolder('Allies');
+  a.add(TUNING, 'allyDamage', 0, 1, 0.05).name('damage dealt ×');
+  a.add(TUNING, 'allyDamageTaken', 0, 1, 0.05).name('damage taken ×');
+  a.add(TUNING, 'allySkill', 0, 1.4, 0.05).name('dodge skill ×');
+  a.add(TUNING, 'aggroLeader', 0.5, 12, 0.5).name('boss favours you ×');
+  a.add(TUNING, 'mendCooldown', 2, 20, 0.5).name('Ghalus Mend every (s)');
+  a.add(TUNING, 'mendAmount', 0, 0.6, 0.01).name('Mend heals (of max)');
+  const vo = gui.addFolder('Voices');
+  vo.add(VOICE_TUNING, 'volume', 0, 1.5, 0.05);
+  vo.add(VOICE_TUNING, 'efforts', 0, 2, 0.1).name('grunts and shouts ×');
+  vo.add(VOICE_TUNING, 'captions');
+  const bl = gui.addFolder('Boss armour');
+  bl.add(BOSS_LOOK.uRim, 'value', 0, 3, 0.05).name('rim glow');
+  bl.add(BOSS_LOOK.uInlay, 'value', 0, 3, 0.05).name('inlay glow');
+  bl.add(BOSS_LOOK.uLift, 'value', 0, 1, 0.01).name('self-lit');
+  bl.add(BOSS_LOOK.uGlyph, 'value', 0, 4, 0.05).name('glyphs');
   const v = gui.addFolder('Look');
   v.add(game.bloom, 'strength', 0, 1.5, 0.01).name('bloom');
   v.add(game.renderer, 'toneMappingExposure', 0.5, 2, 0.01).name('exposure');
@@ -139,11 +152,13 @@ export function installDebug(game: Game) {
       pos: [+game.boss.pos.x.toFixed(1), +game.boss.pos.z.toFixed(1)],
     },
     party: game.party.members.map((m) => `${m.def.id}:${Math.round(m.hp)}${m.alive ? '' : '†'}`),
+    knights: game.party.members.map((m) => ({ id: m.def.id, state: m.state, pos: [+m.pos.x.toFixed(1), +m.pos.z.toFixed(1)], dealt: Math.round(m.dealt), taken: Math.round(m.taken), fellTo: m.fellTo })),
+    hunted: game.party.bossTarget.def.id,
     active: game.party.cur.def.id,
     state: game.party.state,
     pos: [+game.party.pos.x.toFixed(1), +game.party.pos.z.toFixed(1)],
     cures: game.party.cureCharges,
-    stats: { ...game.party.stats, damage: Math.round(game.party.stats.damage) },
+    stats: { ...game.party.stats, damage: Math.round(game.party.stats.damage), allyDamage: Math.round(game.party.stats.allyDamage) },
     hazards: game.hazards.length,
   });
 
@@ -167,5 +182,5 @@ export function installDebug(game: Game) {
     return +t.toFixed(2);
   };
 
-  return { game, bot, gui, sim, until, snapshot, state, setBot: (v: boolean) => (botOn = v) };
+  return { game, bot, gui, sim, until, snapshot, state, look: BOSS_LOOK, setBot: (v: boolean) => (botOn = v) };
 }

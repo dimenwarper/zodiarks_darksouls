@@ -167,6 +167,60 @@ export interface Telegraph {
   cancel(): void;
 }
 
+/** A ray that stays until stopped; move `from` and `to` and it follows. */
+export interface Stream {
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  width: number;
+  stop(fade?: number): void;
+}
+
+/** A ball of gathered light; move `pos`, set `size`, and `stop` it when it is spent. */
+export interface Orb {
+  pos: THREE.Vector3;
+  size: number;
+  stop(fade?: number): void;
+}
+
+const COLUMN_VS = /* glsl */ `
+  varying vec2 vUv; varying vec3 vN; varying vec3 vView; varying float vY;
+  void main() {
+    vUv = uv;
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vY = wp.y;
+    vN = normalize(mat3(modelMatrix) * normal);
+    vView = cameraPosition - wp.xyz;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }`;
+const COLUMN_FS = /* glsl */ `
+  uniform vec3 uColor; uniform vec3 uTints[4]; uniform float uTintGain;
+  uniform float uTime; uniform float uFront; uniform float uAlpha; uniform float uSoft; uniform float uStreak;
+  varying vec2 vUv; varying vec3 vN; varying vec3 vView; varying float vY;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  // Value noise that repeats every 46 cells across, so it closes round the column without a seam.
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float x0 = mod(i.x, 46.0), x1 = mod(i.x + 1.0, 46.0);
+    return mix(mix(hash(vec2(x0, i.y)), hash(vec2(x1, i.y)), f.x), mix(hash(vec2(x0, i.y + 1.0)), hash(vec2(x1, i.y + 1.0)), f.x), f.y);
+  }
+  void main() {
+    if (vY < uFront) discard;
+    // Brightest where the eye looks through the middle of the column, gone at its silhouette.
+    float facing = abs(dot(normalize(vN.xz), normalize(vView.xz)));
+    float body = pow(facing, uSoft);
+    // Light pouring down: streaks that race toward the ground.
+    float n = noise(vec2(vUv.x * 46.0, vY * 0.09 + uTime * 11.0));
+    float streak = mix(1.0, 0.35 + 1.5 * n * n, uStreak);
+    float head = exp(-(vY - uFront) * 0.2) * 2.5;
+    // Four colours wound round it, one for each who gave their power.
+    float h = fract(vUv.x * 2.0 + vY * 0.028 - uTime * 1.3) * 4.0;
+    int k = int(floor(h));
+    float band = smoothstep(0.0, 0.25, fract(h)) * smoothstep(1.0, 0.75, fract(h));
+    vec3 col = uColor + uTints[k] * band * uTintGain;
+    gl_FragColor = vec4(col * body * (streak + head), uAlpha);
+  }`;
+
 const TELEGRAPH_VS = /* glsl */ `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const TELEGRAPH_FS = /* glsl */ `
   uniform float uProgress; uniform vec3 uColor; uniform float uAlpha; varying vec2 vUv;
@@ -210,6 +264,7 @@ export class Fx {
   private ringGeo = new THREE.RingGeometry(0.88, 1, 72);
   private circleGeo = new THREE.CircleGeometry(1, 56);
   private cylGeo = new THREE.CylinderGeometry(1, 1, 1, 20, 1, true);
+  private columnGeo = new THREE.CylinderGeometry(1, 1, 1, 40, 1, true);
   private sphereGeo = new THREE.SphereGeometry(1, 20, 14);
   readonly glowTex: THREE.Texture;
 
@@ -225,7 +280,8 @@ export class Fx {
     this.smoke.setScale(s);
   }
 
-  private add(item: FxItem) {
+  /** Take charge of an effect made elsewhere: it is updated here and swept away with the rest. */
+  add(item: FxItem) {
     this.group.add(item.obj);
     this.items.push(item);
   }
@@ -578,6 +634,176 @@ export class Fx {
         return k < 1;
       },
       dispose: () => mat.dispose(),
+    });
+  }
+
+  /** A sustained ray from one point to another, shedding sparks that run along it. */
+  stream(from: V3, to: V3, color: THREE.ColorRepresentation, width: number, intensity = 3): Stream {
+    const mat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color).multiplyScalar(intensity),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const coreMat = mat.clone();
+    coreMat.color.set(0xffffff).multiplyScalar(intensity * 1.2);
+    const group = new THREE.Group();
+    const outer = new THREE.Mesh(this.cylGeo, mat);
+    const inner = new THREE.Mesh(this.cylGeo, coreMat);
+    outer.renderOrder = inner.renderOrder = 12;
+    group.add(outer, inner);
+    const head = new THREE.Vector3();
+    const dir = new THREE.Vector3();
+    let t = 0;
+    let fade: { t: number; over: number } | null = null;
+    const handle: Stream = {
+      from: new THREE.Vector3().copy(from),
+      to: new THREE.Vector3().copy(to),
+      width,
+      stop: (seconds = 0.25) => {
+        fade ??= { t: 0, over: Math.max(0.01, seconds) };
+      },
+    };
+    this.add({
+      obj: group,
+      update: (dt) => {
+        t += dt;
+        let k = 1;
+        if (fade) {
+          fade.t += dt;
+          k = Math.max(0, 1 - fade.t / fade.over);
+        }
+        // It shoots out from its source before it holds.
+        head.lerpVectors(handle.from, handle.to, Math.min(1, t / 0.16));
+        const len = Math.max(0.01, handle.from.distanceTo(head));
+        dir.subVectors(head, handle.from).divideScalar(len);
+        group.position.copy(handle.from).add(head).multiplyScalar(0.5);
+        group.quaternion.setFromUnitVectors(Y_AXIS, dir);
+        const w = handle.width * k * (0.82 + 0.18 * Math.sin(t * 47));
+        outer.scale.set(w, len, w);
+        inner.scale.set(w * 0.4, len, w * 0.4);
+        mat.opacity = 0.8 * k;
+        coreMat.opacity = k;
+        if (k > 0.3) {
+          _v.lerpVectors(handle.from, head, rand());
+          this.sparks.emit(1, _v, { color, color2: 0xffffff, intensity: 2.5, dir, spread: 0.2, speed: [14, 34], size: [0.1, 0.26], life: [0.25, 0.6] });
+        }
+        return k > 0;
+      },
+      dispose: () => {
+        mat.dispose();
+        coreMat.dispose();
+      },
+    });
+    return handle;
+  }
+
+  /** A white-hot ball wrapped in a coloured glow. */
+  orb(at: V3, color: THREE.ColorRepresentation, intensity = 3): Orb {
+    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffffff).multiplyScalar(intensity * 1.3), transparent: true, depthWrite: false });
+    const glowMat = new THREE.SpriteMaterial({
+      map: this.glowTex,
+      color: new THREE.Color(color).multiplyScalar(intensity),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const group = new THREE.Group();
+    const ball = new THREE.Mesh(this.sphereGeo, mat);
+    const glow = new THREE.Sprite(glowMat);
+    ball.renderOrder = glow.renderOrder = 13;
+    group.add(ball, glow);
+    let t = 0;
+    let fade: { t: number; over: number } | null = null;
+    const handle: Orb = {
+      pos: new THREE.Vector3().copy(at),
+      size: 0,
+      stop: (seconds = 0.2) => {
+        fade ??= { t: 0, over: Math.max(0.01, seconds) };
+      },
+    };
+    this.add({
+      obj: group,
+      update: (dt) => {
+        t += dt;
+        let k = 1;
+        if (fade) {
+          fade.t += dt;
+          k = Math.max(0, 1 - fade.t / fade.over);
+        }
+        group.position.copy(handle.pos);
+        const s = Math.max(0.001, handle.size * k * (0.93 + 0.07 * Math.sin(t * 31)));
+        ball.scale.setScalar(s);
+        glow.scale.setScalar(s * 7);
+        return k > 0;
+      },
+      dispose: () => {
+        mat.dispose();
+        glowMat.dispose();
+      },
+    });
+    return handle;
+  }
+
+  /**
+   * A column of light that falls out of the sky onto `at`: its front drops for `fall`
+   * seconds, it stands for `hold`, then narrows to nothing over `fade`. `tints` wind round it.
+   */
+  skyBeam(at: V3, radius: number, height: number, color: THREE.ColorRepresentation, o: { fall: number; hold: number; fade: number; tints?: THREE.ColorRepresentation[]; intensity?: number }) {
+    const tints = [0, 1, 2, 3].map((i) => new THREE.Color(o.tints?.length ? o.tints[i % o.tints.length] : color));
+    const inten = o.intensity ?? 1;
+    const shell = (r: number, col: THREE.Color, soft: number, streak: number, tintGain: number, alpha: number) => {
+      const mat = new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: col }, uTints: { value: tints }, uTintGain: { value: tintGain }, uTime: { value: 0 },
+          uFront: { value: height }, uAlpha: { value: alpha }, uSoft: { value: soft }, uStreak: { value: streak },
+        },
+        vertexShader: COLUMN_VS,
+        fragmentShader: COLUMN_FS,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      });
+      const mesh = new THREE.Mesh(this.columnGeo, mat);
+      mesh.renderOrder = 12;
+      mesh.frustumCulled = false;
+      return { mesh, mat, r, alpha };
+    };
+    const base = new THREE.Color(color);
+    // A white-hot thread, the column itself, the colours wound round it, and a haze about them all.
+    const shells = [
+      shell(0.2, new THREE.Color(0xffffff).multiplyScalar(inten * 1.3), 1.2, 0.2, 0, 0.9),
+      shell(1, base.clone().multiplyScalar(inten * 0.42), 1.7, 0.9, 0, 0.6),
+      shell(1.3, new THREE.Color(0, 0, 0), 0.8, 0.5, inten * 0.9, 0.7),
+      shell(2.2, base.clone().multiplyScalar(inten * 0.1), 3, 1, 0, 0.6),
+    ];
+    const group = new THREE.Group();
+    group.position.set(at.x, height / 2, at.z);
+    for (const s of shells) group.add(s.mesh);
+    let t = 0;
+    const total = o.fall + o.hold + o.fade;
+    this.add({
+      obj: group,
+      update: (dt) => {
+        t += dt;
+        const landed = t >= o.fall;
+        const out = clamp((t - o.fall - o.hold) / o.fade, 0, 1);
+        // It lands swollen, settles, and at the end draws in to a thread.
+        const swell = landed ? 1 + 0.3 * Math.exp(-(t - o.fall) * 7) : 0.55;
+        const k = swell * (1 - ease.in(out) * 0.92) * (0.94 + 0.06 * Math.sin(t * 53));
+        for (const s of shells) {
+          s.mesh.scale.set(radius * s.r * k, height, radius * s.r * k);
+          s.mat.uniforms.uTime.value = t;
+          s.mat.uniforms.uFront.value = landed ? -1 : height * (1 - ease.in(t / o.fall));
+          s.mat.uniforms.uAlpha.value = s.alpha * (1 - out);
+        }
+        return t < total;
+      },
+      dispose: () => {
+        for (const s of shells) s.mat.dispose();
+      },
     });
   }
 

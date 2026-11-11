@@ -19,6 +19,8 @@ export class AudioSys {
   private master: GainNode | null = null;
   private sfxBus: GainNode | null = null;
   private musicBus: GainNode | null = null;
+  private voiceBus: GainNode | null = null;
+  private voiceFiles: string[] = [];
   private buffers = new Map<string, AudioBuffer>();
   private music: { src: AudioBufferSourceNode; gain: GainNode; name: string } | null = null;
   private drone: { stop: () => void } | null = null;
@@ -43,11 +45,15 @@ export class AudioSys {
       this.musicBus = this.ctx.createGain();
       this.musicBus.gain.value = 0.55;
       this.musicBus.connect(this.master);
+      this.voiceBus = this.ctx.createGain();
+      this.voiceBus.gain.value = 1.15;
+      this.voiceBus.connect(this.master);
       const len = this.ctx.sampleRate * 2;
       this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
       const d = this.noise.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       void this.loadManifest();
+      void this.loadVoices();
     }
     if (this.ctx.state === 'suspended') await this.ctx.resume().catch(() => {});
   }
@@ -76,6 +82,55 @@ export class AudioSys {
 
   has(name: string) {
     return this.buffers.has(name);
+  }
+
+  /** Speech recordings (public/audio/voice). Decoded once the audio context exists. */
+  preloadVoices(files: string[]) {
+    this.voiceFiles = files;
+    if (this.ctx) void this.loadVoices();
+  }
+
+  private async loadVoices() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    await Promise.all(
+      this.voiceFiles.map(async (file) => {
+        const key = `voice/${file}`;
+        if (this.buffers.has(key)) return;
+        try {
+          const buf = await (await fetch(`/audio/voice/${file}`)).arrayBuffer();
+          this.buffers.set(key, await ctx.decodeAudioData(buf));
+        } catch {
+          /* a missing take is just not spoken */
+        }
+      }),
+    );
+  }
+
+  /** Play one speech recording; the handle lets a more urgent line cut it short. */
+  playVoice(file: string, volume = 1): { duration: number; stop: () => void } | null {
+    const ctx = this.ctx;
+    const buf = this.buffers.get(`voice/${file}`);
+    if (!ctx || this.muted || !this.voiceBus || !buf) return null;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const g = ctx.createGain();
+    g.gain.value = volume;
+    src.connect(g).connect(this.voiceBus);
+    src.start();
+    return {
+      duration: buf.duration,
+      stop: () => {
+        g.gain.cancelScheduledValues(ctx.currentTime);
+        g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+        try {
+          src.stop(ctx.currentTime + 0.1);
+        } catch {
+          /* already ended */
+        }
+      },
+    };
   }
 
   play(name: string, opts: PlayOpts = {}) {
@@ -335,6 +390,23 @@ const SYNTH: Record<string, Recipe> = {
   allout: (c, o, p) => {
     for (const f of [220, 277, 330, 440]) tone(c, o, f, f * 2, 0.8, 0.2 * p.volume, 'sawtooth');
     noise(c, o, 800, 8000, 0.7, 0.4 * p.volume, 1, 'bandpass', 0.3);
+  },
+  seal_draw: (c, o, p) => {
+    tone(c, o, 392, 784, 1.5, 0.14 * p.volume, 'triangle');
+    tone(c, o, 1175, 2350, 1.5, 0.05 * p.volume);
+    noise(c, o, 2500, 9000, 1.5, 0.16 * p.volume, 4, 'bandpass', 0.4);
+  },
+  sky_charge: (c, o, p) => {
+    tone(c, o, 140, 1900, 0.95, 0.26 * p.volume, 'sawtooth');
+    tone(c, o, 210, 2850, 0.95, 0.12 * p.volume, 'triangle');
+    noise(c, o, 600, 8000, 0.95, 0.3 * p.volume, 3, 'bandpass', 0.5);
+  },
+  sky_beam: (c, o, p) => {
+    tone(c, o, 62, 30, 2.0, 1.1 * p.volume);
+    tone(c, o, 233, 110, 1.8, 0.4 * p.volume, 'sawtooth');
+    for (const f of [523, 784, 1046]) tone(c, o, f, f * 0.5, 1.7, 0.12 * p.volume, 'triangle');
+    noise(c, o, 7000, 300, 2.0, 1.0 * p.volume, 0.6, 'lowpass');
+    noise(c, o, 2600, 4200, 1.6, 0.5 * p.volume, 0.7, 'bandpass', 0.04);
   },
   ui_victory: (c, o, p) => {
     [392, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(c, o, f, f, 1.6, 0.18 * p.volume, 'triangle'), i * 160));

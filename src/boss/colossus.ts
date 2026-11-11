@@ -6,6 +6,8 @@ import {
 import type { Telegraph } from '../core/fx';
 import type { World } from '../types';
 import { ARENA_RADIUS } from '../world/arena';
+import { Props, type FitOpts } from '../world/props';
+import { ribbon, ringStroke, ruleStroke, runeBand, runeLine, signStrokes, starStroke, type RibbonOpts, type Stroke } from '../core/seal';
 
 export const BOSS_NAME = 'Ophiuchus';
 export const BOSS_TITLE = 'The Exiled Sign';
@@ -27,10 +29,32 @@ const D = {
   headY: 5.4,
 };
 const CORE_LOCAL = new THREE.Vector3(0, 1.4, 3.1);
+
+/**
+ * Where each generated piece sits. Limb plates are modelled standing the way they hang
+ * (shoulder or hip end up), while a bone's own +y runs away from the body, so they are
+ * turned over to lie along it.
+ */
+const ALONG_BONE: [number, number, number] = [0, 0, 180];
+const SKIN: Record<string, Skin> = {
+  pelvis: {},
+  vertebra: {},
+  tasset: {},
+  chest: {},
+  pauldron: {},
+  wing: {},
+  helm: {},
+  arm: { turn: ALONG_BONE },
+  forearm: { turn: ALONG_BONE },
+  fist: { turn: [-90, 0, 0] },
+  thigh: { turn: ALONG_BONE },
+  shin: { turn: ALONG_BONE },
+  foot: {},
+};
 const HAND_REST = new THREE.Vector3(6.0, -6.2, 1.6);
 
 export const BOSS_TUNING = {
-  hp: 7600,
+  hp: 10500,
   posture: 300,
   postureDecay: 5,
   postureDecayDelay: 4,
@@ -57,6 +81,47 @@ export interface BossPart {
   lockable: boolean;
 }
 
+/** How a generated armour piece sits in the place of the procedural shape it replaces. */
+interface Skin extends FitOpts {
+  /** Size to fill, when it should differ from the procedural shape's own box. */
+  box?: [number, number, number];
+  /** Offset from that shape's centre. */
+  offset?: [number, number, number];
+}
+
+/**
+ * Starlight on the generated plates, shared by all of them: the rim of every plate and its
+ * silver inlay take the boss's glow colour, which is how its wind-ups read from a distance.
+ */
+const ARMOR_GLOW = { uGlow: { value: new THREE.Color() }, uFlash: { value: 0 }, uLift: { value: 0.1 }, uRim: { value: 0.35 }, uInlay: { value: 0.5 }, uGlyph: { value: 1.25 } };
+const armorSkins = new Map<THREE.Material, THREE.Material>();
+function armorSkin(src: THREE.MeshStandardMaterial): THREE.Material {
+  let m = armorSkins.get(src);
+  if (!m) {
+    const skin = src.clone();
+    // No environment map here, so a fully metallic plate would be a black mirror of nothing.
+    skin.metalness = 0.45;
+    skin.roughness = 0.75;
+    // Obsidian: the plates stay dark beside the core's glare, and their inlay does the shining.
+    skin.color.setScalar(0.5);
+    skin.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, ARMOR_GLOW);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec3 uGlow;\nuniform float uFlash;\nuniform float uLift;\nuniform float uRim;\nuniform float uInlay;')
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          {
+            float rim = pow(1.0 - saturate(dot(normalize(vViewPosition), normal)), 3.2);
+            float inlay = smoothstep(0.1, 0.26, dot(diffuseColor.rgb, vec3(0.3, 0.6, 0.1)));
+            totalEmissiveRadiance += uGlow * (rim * uRim + inlay * uInlay) + diffuseColor.rgb * uLift + vec3(1.0, 0.92, 0.85) * uFlash;
+          }`);
+    };
+    m = skin;
+    armorSkins.set(src, m);
+  }
+  return m;
+}
+export const BOSS_LOOK = ARMOR_GLOW;
+
 interface Foot {
   pos: THREE.Vector3;
   yaw: number;
@@ -69,16 +134,19 @@ interface Foot {
   to: THREE.Vector3;
   fromYaw: number;
   toYaw: number;
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   side: 1 | -1;
 }
 
 type State = 'dormant' | 'intro' | 'fight' | 'staggered' | 'transition' | 'dying' | 'dead';
 
+/** Waking: how long the star in its chest takes to catch, and how long it takes to stand. */
+export const BOSS_WAKE = { ignite: 2.2, rise: 2.5 };
+
 interface Limb {
-  upper: THREE.Mesh;
-  lower: THREE.Mesh;
-  end: THREE.Mesh;
+  upper: THREE.Object3D;
+  lower: THREE.Object3D;
+  end: THREE.Object3D;
   tetherA: THREE.Mesh;
   tetherB: THREE.Mesh;
   orbs: THREE.Mesh[];
@@ -175,13 +243,21 @@ export class Colossus {
   private glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   private coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   private redMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 0.3, 0.2) });
-  private pieces: THREE.Mesh[] = [];
+  /** Everything written in light about it: the belt of signs, the sigils, the rune bands. */
+  private glyphMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  private glyphs: THREE.Object3D[] = [];
+  private belt = new THREE.Group();
+  private beltSpin = new THREE.Group();
+  private sigils: { obj: THREE.Object3D; phase: number; rate: number; height: number; reach: number }[] = [];
+  private bands: THREE.Object3D[] = [];
+  private haloRunes!: THREE.Object3D;
+  private pieces: THREE.Object3D[] = [];
   private segs: Limb[] = [];
   private core!: THREE.Mesh;
   private coreGlow!: THREE.Sprite;
   private coreLight!: THREE.PointLight;
   private halo!: THREE.Group;
-  private wings: THREE.Mesh[] = [];
+  private wings: THREE.Object3D[] = [];
   private serpent!: THREE.InstancedMesh;
   private beamMesh!: THREE.Mesh;
   private beamOn = false;
@@ -228,16 +304,39 @@ export class Colossus {
     return this.parts.find((p) => p.id === id)!;
   }
 
-  private piece(geo: THREE.BufferGeometry, parent: THREE.Object3D, x = 0, y = 0, z = 0) {
-    const mesh = new THREE.Mesh(geo, this.armorMat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.position.set(x, y, z);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 22), this.lineMat);
-    mesh.add(edges);
-    parent.add(mesh);
-    this.pieces.push(mesh);
-    return mesh;
+  /**
+   * One plate of the body. With a generated model on disk the plate wears it, sized to the
+   * procedural shape it replaces; otherwise it is that shape, faceted, with glowing edges.
+   */
+  private piece(geo: THREE.BufferGeometry, parent: THREE.Object3D, x = 0, y = 0, z = 0, model?: string, skin: Skin = {}): THREE.Object3D {
+    let obj: THREE.Object3D | null = model ? this.skinned(geo, model, skin) : null;
+    if (obj) geo.dispose();
+    else {
+      const mesh = new THREE.Mesh(geo, this.armorMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 22), this.lineMat));
+      obj = mesh;
+    }
+    obj.position.set(x, y, z);
+    parent.add(obj);
+    this.pieces.push(obj);
+    return obj;
+  }
+
+  private skinned(geo: THREE.BufferGeometry, model: string, skin: Skin): THREE.Object3D | null {
+    geo.computeBoundingBox();
+    const size = geo.boundingBox!.getSize(new THREE.Vector3());
+    const centre = geo.boundingBox!.getCenter(new THREE.Vector3());
+    if (skin.box) size.fromArray(skin.box);
+    if (skin.offset) centre.add(_a.fromArray(skin.offset));
+    const node = this.world.props.fit(model, size.x, size.y, size.z, skin);
+    if (!node) return null;
+    Props.materials(node, armorSkin);
+    node.position.copy(centre);
+    const holder = new THREE.Group();
+    holder.add(node);
+    return holder;
   }
 
   private orb(parent: THREE.Object3D, r: number, x = 0, y = 0, z = 0) {
@@ -256,29 +355,33 @@ export class Colossus {
     this.headNode.position.set(0, D.headY, 0.3);
 
     // Pelvis and floating vertebrae
-    this.piece(new THREE.CylinderGeometry(2.7, 1.9, 2.6, 6), this.pelvisNode, 0, -0.2, 0);
+    const props = this.world.props;
+    this.piece(new THREE.CylinderGeometry(2.7, 1.9, 2.6, 6), this.pelvisNode, 0, -0.2, 0, 'boss_pelvis', SKIN.pelvis);
     for (const sx of [1, -1]) {
-      const tasset = this.piece(new THREE.BoxGeometry(1.5, 3.0, 0.5), this.pelvisNode, sx * 2.5, -1.6, 0.9);
+      const tasset = this.piece(new THREE.BoxGeometry(1.5, 3.0, 0.5), this.pelvisNode, sx * 2.5, -1.6, 0.9, 'boss_tasset', { ...SKIN.tasset, mirror: sx < 0 });
       tasset.rotation.set(-0.15, 0, sx * 0.22);
     }
-    this.piece(new THREE.CylinderGeometry(1.5, 1.7, 0.9, 6), this.pelvisNode, 0, 1.7, 0).rotation.y = 0.5;
-    this.piece(new THREE.CylinderGeometry(1.7, 1.5, 0.9, 6), this.pelvisNode, 0, 2.8, 0);
+    this.piece(new THREE.CylinderGeometry(1.5, 1.7, 0.9, 6), this.pelvisNode, 0, 1.7, 0, 'boss_pelvis', SKIN.vertebra).rotation.y = 0.5;
+    this.piece(new THREE.CylinderGeometry(1.7, 1.5, 0.9, 6), this.pelvisNode, 0, 2.8, 0, 'boss_pelvis', SKIN.vertebra);
     this.orb(this.pelvisNode, 0.7, 0, 2.25, 0);
 
     // Chest: a faceted carapace open at the front, where the core floats between rib prongs
-    const chest = this.piece(new THREE.CylinderGeometry(4.3, 2.6, 4.4, 6), this.chestNode, 0, 2.2, -0.5);
+    const chest = this.piece(new THREE.CylinderGeometry(4.3, 2.6, 4.4, 6), this.chestNode, 0, 2.2, -0.5, 'boss_chest', SKIN.chest);
     chest.scale.z = 0.72;
     for (const sx of [1, -1]) {
-      const pauldron = this.piece(new THREE.DodecahedronGeometry(2.4, 0), this.chestNode, sx * 5.0, 3.7, 0);
+      const pauldron = this.piece(new THREE.DodecahedronGeometry(2.4, 0), this.chestNode, sx * 5.0, 3.7, 0, 'boss_pauldron', { ...SKIN.pauldron, mirror: sx < 0 });
       pauldron.scale.set(1.2, 0.85, 1.25);
-      const spike = this.piece(new THREE.ConeGeometry(0.8, 3.4, 4), this.chestNode, sx * 6.6, 5.2, 0);
-      spike.rotation.z = -sx * 0.75;
-      for (let i = 0; i < 3; i++) {
+      // The generated pauldron carries its own spike, and the generated carapace its own ribs and collar.
+      if (!props.has('boss_pauldron')) {
+        const spike = this.piece(new THREE.ConeGeometry(0.8, 3.4, 4), this.chestNode, sx * 6.6, 5.2, 0);
+        spike.rotation.z = -sx * 0.75;
+      }
+      for (let i = 0; i < 3 && !props.has('boss_chest'); i++) {
         const rib = this.piece(new THREE.ConeGeometry(0.34, 2.6, 4), this.chestNode, sx * (2.5 - i * 0.2), 0.3 + i * 1.15, 2.2);
         rib.rotation.set(1.2, 0, sx * (1.0 - i * 0.1));
       }
     }
-    this.piece(new THREE.TorusGeometry(2.0, 0.42, 5, 8), this.chestNode, 0, 4.5, 0).rotation.x = Math.PI / 2;
+    if (!props.has('boss_chest')) this.piece(new THREE.TorusGeometry(2.0, 0.42, 5, 8), this.chestNode, 0, 4.5, 0).rotation.x = Math.PI / 2;
 
     // Core
     this.core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25, 0), this.coreMat);
@@ -298,19 +401,21 @@ export class Colossus {
     for (let i = 0; i < 6; i++) {
       const sx = i < 3 ? 1 : -1;
       const k = i % 3;
-      const shard = this.piece(new THREE.OctahedronGeometry(1, 0), this.chestNode, sx * (2.6 + k * 1.3), 3.4 + k * 0.4, -3.0);
+      const shard = this.piece(new THREE.OctahedronGeometry(1, 0), this.chestNode, sx * (2.6 + k * 1.3), 3.4 + k * 0.4, -3.0, 'boss_wing', SKIN.wing);
       shard.scale.set(0.7, 3.6 + k * 1.3, 0.3);
       shard.userData = { sx, k };
       this.wings.push(shard);
     }
 
     // Head: a blind helm before a broken halo of thirteen studs
-    const helm = this.piece(new THREE.IcosahedronGeometry(1.75, 0), this.headNode);
+    const helm = this.piece(new THREE.IcosahedronGeometry(1.75, 0), this.headNode, 0, 0, 0, 'boss_helm', SKIN.helm);
     helm.scale.set(0.95, 1.18, 1.0);
-    this.piece(new THREE.ConeGeometry(0.9, 2.2, 4), this.headNode, 0, -1.4, 0.5).rotation.x = Math.PI;
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.2, 0.3), this.glowMat);
-    visor.position.set(0, 0.2, 1.5);
-    this.headNode.add(visor);
+    if (!props.has('boss_helm')) {
+      this.piece(new THREE.ConeGeometry(0.9, 2.2, 4), this.headNode, 0, -1.4, 0.5).rotation.x = Math.PI;
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.2, 0.3), this.glowMat);
+      visor.position.set(0, 0.2, 1.5);
+      this.headNode.add(visor);
+    }
     this.halo = new THREE.Group();
     this.halo.position.set(0, 0.6, -1.5);
     this.headNode.add(this.halo);
@@ -331,7 +436,7 @@ export class Colossus {
     this.chestNode.add(this.serpent);
 
     // Limbs live in world space and are placed along the solved bones every frame.
-    const seg = (len: number, r0: number, r1: number) => this.piece(new THREE.CylinderGeometry(r1, r0, len, 6), g);
+    const seg = (len: number, r0: number, r1: number, model: string, skin: Skin) => this.piece(new THREE.CylinderGeometry(r1, r0, len, 6), g, 0, 0, 0, model, skin);
     const tether = () => {
       const m = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 1, 5), this.glowMat);
       g.add(m);
@@ -339,10 +444,11 @@ export class Colossus {
     };
     for (let i = 0; i < 2; i++) {
       // Arms
-      const fist = this.piece(new THREE.DodecahedronGeometry(1.8, 0), g);
+      const mirror = i === 1;
+      const fist = this.piece(new THREE.DodecahedronGeometry(1.8, 0), g, 0, 0, 0, 'boss_fist', { ...SKIN.fist, mirror });
       this.segs.push({
-        upper: seg(D.upper - 1.2, 1.35, 1.0),
-        lower: seg(D.fore - 1.0, 1.05, 1.5),
+        upper: seg(D.upper - 1.2, 1.35, 1.0, 'boss_arm', { ...SKIN.arm, mirror }),
+        lower: seg(D.fore - 1.0, 1.05, 1.5, 'boss_forearm', { ...SKIN.forearm, mirror }),
         end: fist,
         tetherA: tether(),
         tetherB: tether(),
@@ -351,11 +457,11 @@ export class Colossus {
     }
     for (let i = 0; i < 2; i++) {
       // Legs
-      const foot = this.piece(new THREE.BoxGeometry(2.7, 1.5, 4.8), g);
-      foot.geometry.translate(0, 0, 0.9);
+      const mirror = i === 1;
+      const foot = this.piece(new THREE.BoxGeometry(2.7, 1.5, 4.8).translate(0, 0, 0.9), g, 0, 0, 0, 'boss_foot', { ...SKIN.foot, mirror });
       this.segs.push({
-        upper: seg(D.thigh - 1.2, 1.35, 1.05),
-        lower: seg(D.shin - 1.0, 1.2, 0.85),
+        upper: seg(D.thigh - 1.2, 1.35, 1.05, 'boss_thigh', { ...SKIN.thigh, mirror }),
+        lower: seg(D.shin - 1.0, 1.2, 0.85, 'boss_shin', { ...SKIN.shin, mirror }),
         end: foot,
         tetherA: tether(),
         tetherB: tether(),
@@ -367,6 +473,8 @@ export class Colossus {
       });
     }
 
+    this.buildGlyphs();
+
     // Beam
     this.beamMesh = new THREE.Mesh(
       new THREE.CylinderGeometry(1, 1, 1, 12, 1, true),
@@ -377,12 +485,76 @@ export class Colossus {
     g.add(this.beamMesh);
   }
 
+  /**
+   * The ornaments of an exiled sign: the twelve it was cast out from turn about it on a
+   * belt, its own seal circles it in three places, and runes ring its wrists, shins and halo.
+   */
+  private buildGlyphs() {
+    const g = this.group;
+    const written = (strokes: Stroke[], place: RibbonOpts['place']) => {
+      const mesh = new THREE.Mesh(ribbon(strokes, { place }), this.glyphMat);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 11;
+      this.glyphs.push(mesh);
+      return mesh;
+    };
+    // A strip written along x, wrapped round a band of radius r that opens upward by `flare`.
+    const wrap = (r: number, flare = 0) => (x: number, y: number, out: THREE.Vector3) => {
+      const rr = r - y * flare;
+      out.set(Math.sin(x / r) * rr, -y, Math.cos(x / r) * rr);
+    };
+    const upright = (x: number, y: number, out: THREE.Vector3) => out.set(x, -y, 0);
+
+    // The belt: twelve signs in their rings, a rune between each and the next.
+    const R = 9.4;
+    const L = TAU * R;
+    const belt: Stroke[] = [ruleStroke(L, -1.4, 0.07, 144), ruleStroke(L, 1.4, 0.07, 144), ...runeLine(L, 0.95, 12, 13, 0.06)];
+    for (let k = 0; k < 12; k++) {
+      const x = (L * k) / 12;
+      belt.push(ringStroke(1.0, 0.07, 40, x, 0), ...signStrokes(k, x, 0, 0.62, -Math.PI / 2, { width: 0.075 }));
+    }
+    this.beltSpin.add(written(belt, wrap(R, 0.4)));
+    this.belt.add(this.beltSpin);
+    g.add(this.belt);
+
+    // Its own seal, three times over: the thirteen-point star about the thirteenth sign.
+    const seal: Stroke[] = [
+      ringStroke(1.9, 0.07, 64), ringStroke(1.62, 0.05, 64), starStroke(1.62, 13, 5, 0.05), ringStroke(0.8, 0.05, 40),
+      ...signStrokes(12, 0, 0, 0.5, -Math.PI / 2, { width: 0.07 }),
+    ];
+    const sealGeo = ribbon(seal, { place: upright });
+    for (let i = 0; i < 3; i++) {
+      const mesh = new THREE.Mesh(sealGeo, this.glyphMat);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 11;
+      this.glyphs.push(mesh);
+      g.add(mesh);
+      this.sigils.push({ obj: mesh, phase: (i / 3) * TAU + 0.6, rate: [0.21, -0.16, 0.27][i], height: [-6.5, 0.5, 6.5][i], reach: [12.5, 13.5, 11][i] });
+    }
+
+    // Bands of runes turning about its wrists and shins.
+    this.segs.forEach((s, i) => {
+      const arm = i < 2;
+      const r = arm ? 2.2 : 1.95;
+      const band = written([ruleStroke(TAU * r, -0.52, 0.055, 48), ruleStroke(TAU * r, 0.52, 0.055, 48), ...runeLine(TAU * r, 0.64, arm ? 13 : 11, 31 + i, 0.055)], wrap(r));
+      band.position.y = arm ? 1.0 : 0.3;
+      s.lower.add(band);
+      this.bands.push(band);
+    });
+
+    // And a ring of them outside the halo, turning against it.
+    this.haloRunes = written([...runeBand(3.85, 0.62, 22, 77, 0.05), ringStroke(4.3, 0.05, 72)], upright);
+    this.haloRunes.position.copy(this.halo.position);
+    this.headNode.add(this.haloRunes);
+  }
+
   dispose() {
     this.cancelAttacks();
     this.world.scene.remove(this.group);
     this.group.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.geometry) m.geometry.dispose();
+      // Generated plates share their geometry with the next colossus.
+      if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
     });
   }
 
@@ -461,10 +633,11 @@ export class Colossus {
     return out.set(this.pos.x + Math.sin(aa) * dd, 0, this.pos.z + Math.cos(aa) * dd);
   }
 
-  private telegraph(at: THREE.Vector3, radius: number, duration: number, color?: number) {
+  /** `wave`: in the eclipse this impact also throws out a shockwave (see shockRing). */
+  private telegraph(at: THREE.Vector3, radius: number, duration: number, color?: number, wave = false) {
     const t = this.world.fx.telegraph(at, radius, duration, color ?? (this.phase === 2 ? 0xff5a1e : 0xff3b2e));
     this.teles.push(t);
-    this.world.threats.push({ pos: at, radius, at: this.world.time + duration });
+    this.world.threats.push({ pos: at, radius, at: this.world.time + duration, wave: wave && this.phase === 2 });
     return t;
   }
 
@@ -505,7 +678,7 @@ export class Colossus {
     const life = (r1 - r0) / speed;
     this.world.fx.shockwave(center, r0, r1, life, this.phase === 2 ? 0xff5a2a : 0x8fb8ff);
     const h = this.world.addHazard({
-      shape: 'ring', center, radius: r0, width: 1.5, damage: this.dmg(damage), knock, life, label: 'shockwave',
+      shape: 'ring', center, radius: r0, width: 1.5, grow: speed, damage: this.dmg(damage), knock, life, label: 'shockwave',
       update(dt) {
         this.radius += speed * dt;
       },
@@ -523,7 +696,7 @@ export class Colossus {
     const target = this.reachPoint(w.player.pos, 5.5, 15.5, new THREE.Vector3());
     const windup = 1.2 * speed;
     const strike = 0.2;
-    const tele = this.telegraph(target, R, windup + strike);
+    const tele = this.telegraph(target, R, windup + strike, undefined, true);
     w.audio.play('boss_windup', { volume: 0.8 });
     yield* tween(windup, (k, dt) => {
       if (k < 0.72) {
@@ -623,7 +796,7 @@ export class Colossus {
     };
     aim();
     const windup = 0.95 * this.tempo;
-    const tele = this.telegraph(target, R, windup + 0.14);
+    const tele = this.telegraph(target, R, windup + 0.14, undefined, true);
     foot.locked = true;
     foot.stepping = false;
     const from = foot.pos.clone();
@@ -655,7 +828,7 @@ export class Colossus {
     const target = this.reachPoint(w.player.pos, 7, 14, new THREE.Vector3(), 0.9);
     const windup = 1.55 * this.tempo;
     const strike = 0.22;
-    const tele = this.telegraph(target, R, windup + strike);
+    const tele = this.telegraph(target, R, windup + strike, undefined, true);
     w.audio.play('boss_windup', { volume: 1, rate: 0.8 });
     yield* tween(windup, (k, dt) => {
       if (k < 0.7) {
@@ -701,6 +874,7 @@ export class Colossus {
     const w = this.world;
     const charge = 1.5 * this.tempo;
     w.audio.play('boss_beam_charge', { volume: 1 });
+    w.voice.say('boss', 'beam', { priority: 1, chance: 0.7, cooldown: 14, delay: 0.5 });
     const aimPos = w.player.pos.clone().setY(0);
     const tele = this.telegraph(aimPos, 2.2, charge, 0xffb040);
     yield* tween(charge, (k, dt) => {
@@ -755,6 +929,7 @@ export class Colossus {
   private *starfall(): Script {
     const w = this.world;
     w.audio.play('boss_roar', { volume: 0.7, rate: 1.3 });
+    w.voice.say('boss', 'starfall', { priority: 1, chance: 0.8, cooldown: 14, delay: 0.4 });
     yield* tween(1.1 * this.tempo, () => {
       this.setHand(0, 8.5, 26, 0.5, 3.5);
       this.setHand(1, -8.5, 26, 0.5, 3.5);
@@ -815,16 +990,36 @@ export class Colossus {
   private *introScript(): Script {
     const w = this.world;
     this.setKneelTargets();
-    yield* tween(1.6, (k) => {
-      this.ctl.glow = k;
-      w.fx.shake(0.04);
+    this.ctl.headLook = false;
+    // The star in its chest catches: a stutter of light that steadies as it takes.
+    w.audio.play('boss_windup', { volume: 0.9, rate: 0.55 });
+    yield* tween(BOSS_WAKE.ignite, (k) => {
+      // Dark, a flash, dark again: the flashes come closer together until one of them holds.
+      const lit = k > 0.86 || Math.sin(this.time * 37) * Math.sin(this.time * 8.3) > 0.6 - 0.95 * k;
+      // Straight onto the lights, past the easing that would smooth the flicker away.
+      this.ctl.glow = this.cur.glow = lit ? 0.85 + 0.35 * k : 0.015 + 0.05 * k;
+      w.fx.shake(0.02 + 0.05 * k);
+      if (rand() < 0.25 + 0.6 * k) {
+        w.fx.burst(this.corePos, 1, { color: 0x9fd0ff, color2: 0xffffff, intensity: 3, speed: [2, 10], size: [0.1, 0.3], life: [0.3, 0.9], gravity: 4 });
+      }
     });
+    // It has its light. Now it remembers that it has a body.
+    this.flash = 1.4;
+    w.fx.flash(this.corePos, 0xbfe0ff, 30, 0.6, 2.6);
+    _a.set(this.pos.x, 0.15, this.pos.z);
+    w.fx.shockwave(_a, 3, 44, 1.4, 0x8fb8ff);
+    w.fx.ring(_a, { r0: 2, r1: 26, life: 0.9, color: 0x9fc0ff, intensity: 2.4 });
+    w.fx.puff(_a, 40, { radius: 9, speed: [2, 8], size: [2, 4.5], life: [1, 2.2], dir: UP, spread: 0.9 });
+    w.fx.shake(0.8);
     w.audio.play('boss_roar', { volume: 1, rate: 0.9 });
     this.resetCtl();
     this.ctl.bodyStiff = 1.6;
     this.ctl.stiff[0] = this.ctl.stiff[1] = 1.6;
     this.ctl.lean = -0.25;
-    yield* tween(2.4, () => w.fx.shake(0.06));
+    yield* tween(BOSS_WAKE.rise, (_k, dt) => {
+      w.fx.shake(0.06);
+      this.faceToward(w.player.pos, 0.9, dt);
+    });
     this.ctl.lean = 0.06;
     this.resetCtl();
     this.state = 'fight';
@@ -930,6 +1125,7 @@ export class Colossus {
     this.core.visible = false;
     this.serpent.visible = false;
     this.halo.visible = false;
+    for (const o of this.glyphs) o.visible = false;
     for (const s of this.segs) {
       s.tetherA.visible = s.tetherB.visible = false;
       for (const o of s.orbs) o.visible = false;
@@ -945,6 +1141,8 @@ export class Colossus {
 
   private *brain(): Script {
     while (true) {
+      // Between attacks it may turn on a different Knight.
+      this.world.retarget();
       yield* this.idle((this.phase === 2 ? rand(0.45, 0.95) : rand(0.95, 1.6)) * BOSS_TUNING.tempo);
       if (this.pendingPhase2) {
         this.pendingPhase2 = false;
@@ -1032,8 +1230,11 @@ export class Colossus {
 
   // ---------------------------------------------------------------- damage
 
-  /** Returns the damage actually dealt (after part and stagger multipliers). */
-  takeDamage(part: BossPart, damage: number, stagger: number, hitPos: THREE.Vector3): number {
+  /**
+   * Returns the damage actually dealt (after part and stagger multipliers). `minor` marks a
+   * hit from an ally, whose number is drawn smaller than the player's own.
+   */
+  takeDamage(part: BossPart, damage: number, stagger: number, hitPos: THREE.Vector3, minor = false): number {
     if (this.invulnerable || this.state === 'dormant' || this.state === 'intro' || this.state === 'dying' || this.state === 'dead') return 0;
     const staggered = this.state === 'staggered';
     const mult = part.mult * (staggered ? (part.weak ? 1.5 : 1.25) : 1);
@@ -1041,7 +1242,7 @@ export class Colossus {
     this.hp -= dealt;
     this.flash = 1;
     const w = this.world;
-    w.damageNumber(hitPos, dealt, part.weak ? 'weak' : part.armor ? 'armor' : 'normal');
+    w.damageNumber(hitPos, dealt, minor ? 'ally' : part.weak ? 'weak' : part.armor ? 'armor' : 'normal');
     if (this.hp <= 0) {
       this.script = this.deathScript();
       return dealt;
@@ -1328,6 +1529,22 @@ export class Colossus {
     }
     this.serpent.instanceMatrix.needsUpdate = true;
 
+    // Glyphs. The belt and the sigils hang in the air about the chest rather than on it:
+    // they follow where it goes but do not lurch with every blow.
+    const quick = 1 + this.cur.wings * 1.3;
+    this.chestNode.localToWorld(_a.set(0, 0.6, 0));
+    this.belt.position.lerp(_a, dt > 0 ? 1 - Math.exp(-2.5 * dt) : 1);
+    this.belt.rotation.set(0.22 + this.cur.wings * 0.1, this.belt.rotation.y - dt * 0.05, 0, 'YXZ');
+    this.beltSpin.rotation.y += dt * 0.15 * quick;
+    this.sigils.forEach((s, i) => {
+      s.phase += dt * s.rate * quick;
+      const c = this.belt.position;
+      s.obj.position.set(c.x + Math.sin(s.phase) * s.reach, c.y + s.height + Math.sin(t * 0.7 + i * 2.1) * 0.6, c.z + Math.cos(s.phase) * s.reach);
+      s.obj.rotation.set(-0.22, s.phase, s.obj.rotation.z + dt * 0.4 * (i % 2 ? -1 : 1), 'YXZ');
+    });
+    this.bands.forEach((b, i) => (b.rotation.y += dt * (i % 2 ? -0.8 : 0.8) * quick));
+    this.haloRunes.rotation.z -= dt * 0.2;
+
     if (this.beamOn) {
       this.beamMesh.visible = true;
       const flick = 0.75 + 0.25 * Math.sin(t * 60);
@@ -1352,6 +1569,9 @@ export class Colossus {
     this.redMat.color.setRGB(3 * g + 0.2, 0.3 * g, 0.2 * g);
     this.core.scale.setScalar((this.state === 'staggered' ? 1.35 : 1) * (0.92 + 0.08 * corePulse));
     this.armorMat.emissive.copy(this.glowColor).multiplyScalar(0.012 * g + this.flash * 0.05);
+    ARMOR_GLOW.uGlow.value.copy(this.glowColor).multiplyScalar(g * pulse * 0.55);
+    ARMOR_GLOW.uFlash.value = this.flash * 0.3;
+    this.glyphMat.color.copy(this.glowColor).multiplyScalar(g * pulse * ARMOR_GLOW.uGlyph.value).addScalar(this.flash * 0.5);
   }
 
   private updateDebris(dt: number) {

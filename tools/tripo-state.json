@@ -1,0 +1,376 @@
+{
+  "sigmund": {
+    "model": {
+      "task": "3173f591-9025-48ec-9b3f-d418146597d9",
+      "done": true,
+      "credits": 40
+    },
+    "rigCheck": {
+      "riggable": true,
+      "rig_type": "biped"
+    },
+    "rig": {
+      "task": "a17b6a60-b6ad-482c-bc6a-3d0b279cef65",
+      "done": true,
+      "credits": 25
+    },
+    "anims": {
+      "idle": {
+        "task": "3bd2e635-8cbf-4dd9-96e2-2cfd75c6cde5",
+        "done": true,
+        "credits": 10
+      },
+      "fall": {
+        "task": "8c47929a-4a30-4d62-b87d-17d697501bdb",
+        "done": true,
+        "credits": 10
+      },
+      "run": {
+        "task": "9219d07e-3d4b-4d4c-adc1-9c0f330b52b7",
+        "done": true,
+        "credits": 10
+      },
+      "hit_to_body_01": {
+        "task": "4ddb4edf-f456-4800-9b6f-74b6fe768d68",
+        "done": true,
+        "credits": 10
+      },
+      "defeat_02": {
+        "task": "6343421b-8792-4832-89cc-397b47ff3205",
+        "done": true,
+        "credits": 10
+      },
+      "jump_down": {
+        "task": "d4ef6920-2205-4cb6-b298-a1076382b141",
+        "done": true,
+        "credits": 10
+      },
+      "victory_celebration": {
+        "task": "e64cac9b-2f9b-4ec9-8aba-1661430c3b09",
+        "done": true,
+        "credits": 10
+      },
+      "dive": {
+        "task": "6745f27d-d7a1-4d29-a2c1-27e7fb31210e",
+        "done": true,
+        "credits": 10
+      },
+      "slash": {
+        "task": "e05f568b-18a0-4025-a5e8-5a6b2e473145",
+        "done": true,
+        "credits": 10
+      },
+      "chop": {
+        "task": "2fd9f36e-9cb9-46bb-857a-117202407808",
+        "done": true,
+        "credits": 10
+      }
+    },
+    "weapon": {
+      "task": "a39488f2-2d15-4486-afd7-0912c8977a06",
+      "done": true,
+      "credits": 40
+    }
+  },
+  "symbeline": {
+    "model": {
+      "task": "9e4268ba-1d46-4b9f-8343-f00e04272d1a",
+      "done": true,
+      "credits": 40
+    },
+    "rigCheck": {
+      "riggable": true,
+      "rig_type": "biped"
+    },
+    "rig": {
+      "task": "9c0ce970-06b2-4515-98c8-e050cab5928e",
+      "done": true,
+      "credits": 25
+    },
+    "anims": {
+      "idle": {
+        "task": "c4e75c40-aad8-4070-99b7-57079a8d035b",
+        "done": true,
+        "credits": 10
+      },
+      "hit_to_body_01": {
+        "task": "8af8775f-108a-4007-ac58-2d9cfabe27d5",
+        "done": true,
+        "credits": 10
+      },
+      "run": {
+        "task": "e7949041-4af4-4b8d-a4b4-f171f53b373f",
+        "done": true,
+        "credits": 10
+      },
+      "fall": {
+        "task": "9c4333d3-62ac-41a6-98b9-65fd70388566",
+        "done": true,
+        "credits": 10
+      },
+      "defeat_02": {
+        "task": "f0905d59-8f79-4d1d-a97f-8dd92aba4048",
+        "done": true,
+        "credits": 10
+      },
+      "jump_down": {
+        "task": "e650dc2c-0467-4010-b45d-87c770061b8b",
+        "done": true,
+        "credits": 10
+      },
+      "victory_celebration": {
+        "task": "50153801-a407-4bd3-993f-446944a67315",
+        "done": true,
+        "credits": 10
+      },
+      "flip": {
+        "task": "f42e77cb-93c0-4160-aa47-0d2cdc7e45f3",
+        "done": true,
+        "credits": 10
+      },
+      "slash": {
+        "task": "db37d4d0-f01b-49d5-9eb6-680560fa879b",
+        "done": true,
+        "credits": 10
+      },
+      "dance_03": {
+        "task": "91019ebb-bed7-402e-8d6c-a88ed2da87c3",
+        "done": true,
+        "credits": 10
+      },
+      "box_02": {
+        "task": "aa150f3a-15ef-4f16-ad13-f786f881eca3",
+        "done": true,
+        "credits": 10
+      },
+      "pitch_baseball": {
+        "task": "166955b0-d5f0-43d5-a366-66b1cd210857",
+        "done": true,
+        "credits": 10
+      }
+    }
+  },
+  "ghalus": {
+    "model": {
+      "task": "bfadd710-a06a-4f3c-b2a4-d3fe4813e350",
+      "done": true,
+      "credits": 40
+    },
+    "rigCheck": {
+      "riggable": true,
+      "rig_type": "biped"
+    },
+    "rig": {
+      "task": "86292a8d-67aa-416d-a5db-aa9c108b6188",
+      "done": true,
+      "credits": 25
+    },
+    "anims": {
+      "idle": {
+        "task": "e3c8e796-3689-4ec6-8a8e-f1e50b1e5801",
+        "done": true,
+        "credits": 10
+      },
+      "fall": {
+        "task": "e0f1cc56-d92e-4606-bc8d-652b781fd29f",
+        "done": true,
+        "credits": 10
+      },
+      "hit_to_body_01": {
+        "task": "77362fe8-23e2-4f7c-ae3b-f104b328fcf6",
+        "done": true,
+        "credits": 10
+      },
+      "run": {
+        "task": "1fab420a-468f-4bf6-91b8-28b6bb63f13c",
+        "done": true,
+        "credits": 10
+      },
+      "defeat_02": {
+        "task": "8fef28ee-4dfc-4f53-99f9-1832cb5b79e3",
+        "done": true,
+        "credits": 10
+      },
+      "victory_celebration": {
+        "task": "23969d0c-57df-41d6-a720-a13d35ff1b57",
+        "done": true,
+        "credits": 10
+      },
+      "dive": {
+        "task": "ebf772a2-20d7-4bf2-8d85-1aca751ced74",
+        "done": true,
+        "credits": 10
+      },
+      "jump_down": {
+        "task": "d9ed6a0d-8d53-4fba-bbeb-aa09ad28e037",
+        "done": true,
+        "credits": 10
+      },
+      "cast_a_spell": {
+        "task": "5597fd07-d6c0-4a6d-8583-8cfb9ec49e93",
+        "done": true,
+        "credits": 10
+      }
+    },
+    "weapon": {
+      "task": "41a0d4f4-5a8c-4b46-a5ac-b01e715eec18",
+      "done": true,
+      "credits": 40
+    }
+  },
+  "deux": {
+    "model": {
+      "task": "d7525bf0-12b4-4f3a-929c-2f7ef2f326b1",
+      "done": true,
+      "credits": 40
+    },
+    "rigCheck": {
+      "riggable": true,
+      "rig_type": "biped"
+    },
+    "rig": {
+      "task": "590b6139-0fab-4cb8-97e9-6e1b13213a96",
+      "done": true,
+      "credits": 25
+    },
+    "anims": {
+      "idle": {
+        "task": "1a11a639-1632-4278-887f-fda7b9321f6e",
+        "done": true,
+        "credits": 10
+      },
+      "fall": {
+        "task": "69c3854b-ea9a-477a-8c8f-11aed2db6e62",
+        "done": true,
+        "credits": 10
+      },
+      "hit_to_body_01": {
+        "task": "6436d0d4-4c6a-464b-8476-b6037c98455c",
+        "done": true,
+        "credits": 10
+      },
+      "run": {
+        "task": "b2f5eb56-a2b5-4b27-ae25-b06d22c36d26",
+        "done": true,
+        "credits": 10
+      },
+      "defeat_02": {
+        "task": "9ed3f350-1f7d-485f-8afe-22b8c5548d16",
+        "done": true,
+        "credits": 10
+      },
+      "jump_down": {
+        "task": "db8a6058-8b55-4014-ab7a-56dd56042b12",
+        "done": true,
+        "credits": 10
+      },
+      "victory_celebration": {
+        "task": "d893af05-2aff-412f-afa7-1fe3b7b95592",
+        "done": true,
+        "credits": 10
+      },
+      "cast_a_spell": {
+        "task": "394f7c89-b767-41c3-b218-e19e27f62843",
+        "done": true,
+        "credits": 10
+      }
+    },
+    "weapon": {
+      "task": "144e578c-9157-4810-b921-1df636df95b0",
+      "done": true,
+      "credits": 40
+    }
+  },
+  "props": {
+    "boss_tasset": {
+      "task": "48a37c4a-8563-4650-813f-bbce4afc2bfd",
+      "done": true,
+      "credits": 40
+    },
+    "boss_chest": {
+      "task": "0220e777-b308-437a-af94-4fe79969687e",
+      "done": true,
+      "credits": 40
+    },
+    "boss_pelvis": {
+      "task": "2cac04bd-a439-49db-aeb0-85ac23b076cb",
+      "done": true,
+      "credits": 40
+    },
+    "boss_helm": {
+      "task": "22b10f97-ddce-4e6e-8f63-2a9127e09936",
+      "done": true,
+      "credits": 40
+    },
+    "boss_pauldron": {
+      "task": "a198ded9-5f89-455f-b3ff-1dd47483d57a",
+      "done": true,
+      "credits": 40
+    },
+    "boss_arm": {
+      "task": "34c24862-8842-4cca-bba8-d670de9feeee",
+      "done": true,
+      "credits": 40
+    },
+    "boss_forearm": {
+      "task": "29b0be47-83de-4e98-9baf-f71bdbb2cd65",
+      "done": true,
+      "credits": 40
+    },
+    "boss_fist": {
+      "task": "8a59e8b5-6398-4479-8518-0a3bc8c04a76",
+      "done": true,
+      "credits": 40
+    },
+    "boss_thigh": {
+      "task": "38315b99-1ad6-4107-8e36-4695ac2e2f63",
+      "done": true,
+      "credits": 40
+    },
+    "boss_foot": {
+      "task": "fedf3c61-5d66-432a-85ef-8f4ec15c6aea",
+      "done": true,
+      "credits": 40
+    },
+    "boss_wing": {
+      "task": "274d3632-c5b8-4dd0-9c75-4f9f00a5f756",
+      "done": true,
+      "credits": 40
+    },
+    "arena_pillar": {
+      "task": "d802421d-9622-46bd-9b6a-c0d384fd82b6",
+      "done": true,
+      "credits": 40
+    },
+    "arena_stump": {
+      "task": "aa50612b-2c0d-439d-a291-f596455cb120",
+      "done": true,
+      "credits": 40
+    },
+    "arena_drum": {
+      "task": "c3c610d3-3bb6-416b-9aef-41b370113e54",
+      "done": true,
+      "credits": 40
+    },
+    "arena_brazier": {
+      "task": "5d75aee1-02c3-41d8-af38-51b031973869",
+      "done": true,
+      "credits": 40
+    },
+    "arena_statue": {
+      "task": "4e04c3e6-af60-43d9-aff2-910476b7f778",
+      "done": true,
+      "credits": 40
+    },
+    "arena_plinth": {
+      "task": "d659e080-6585-449c-9154-f655f0d4a1f1",
+      "done": true,
+      "credits": 40
+    },
+    "boss_shin": {
+      "task": "21de2c44-f26b-4b29-9677-9301f0b37019",
+      "done": true,
+      "credits": 40
+    }
+  }
+}

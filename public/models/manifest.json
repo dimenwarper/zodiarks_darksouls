@@ -1,0 +1,323 @@
+{
+  "sigmund": {
+    "model": "sigmund/model.glb",
+    "yaw": -1.5707963267948966,
+    "anims": {
+      "idle": {
+        "file": "sigmund/idle.glb"
+      },
+      "move": {
+        "file": "sigmund/run.glb"
+      },
+      "hurt": {
+        "file": "sigmund/hit_to_body_01.glb",
+        "cut": [
+          0,
+          1
+        ]
+      },
+      "down": {
+        "file": "sigmund/fall.glb",
+        "cut": [
+          0.15,
+          0.8
+        ]
+      },
+      "dead": {
+        "file": "sigmund/fall.glb",
+        "cut": [
+          0.15,
+          1
+        ]
+      },
+      "swapIn": {
+        "file": "sigmund/jump_down.glb",
+        "cut": [
+          0.6,
+          1
+        ]
+      },
+      "cheer": {
+        "file": "sigmund/victory_celebration.glb",
+        "cut": [
+          0.05,
+          0.85
+        ]
+      },
+      "roll": {
+        "file": "sigmund/dive.glb",
+        "cut": [
+          0.27,
+          0.9
+        ]
+      },
+      "slashR": {
+        "file": "sigmund/slash.glb",
+        "cut": [
+          0.16,
+          0.31,
+          0.62
+        ]
+      },
+      "overhead": {
+        "file": "sigmund/slash.glb",
+        "cut": [
+          0.12,
+          0.31,
+          0.66
+        ]
+      }
+    },
+    "weapon": {
+      "model": "sigmund/weapon.glb",
+      "length": 2.4,
+      "grip": 0.16,
+      "tip": [
+        -0.1,
+        -0.35,
+        0.93
+      ],
+      "flip": true
+    }
+  },
+  "symbeline": {
+    "model": "symbeline/model.glb",
+    "yaw": -1.5707963267948966,
+    "anims": {
+      "idle": {
+        "file": "symbeline/idle.glb"
+      },
+      "move": {
+        "file": "symbeline/run.glb"
+      },
+      "hurt": {
+        "file": "symbeline/hit_to_body_01.glb",
+        "cut": [
+          0,
+          1
+        ]
+      },
+      "down": {
+        "file": "symbeline/fall.glb",
+        "cut": [
+          0.15,
+          0.8
+        ]
+      },
+      "dead": {
+        "file": "symbeline/fall.glb",
+        "cut": [
+          0.15,
+          1
+        ]
+      },
+      "swapIn": {
+        "file": "symbeline/jump_down.glb",
+        "cut": [
+          0.6,
+          1
+        ]
+      },
+      "cheer": {
+        "file": "symbeline/victory_celebration.glb",
+        "cut": [
+          0.05,
+          0.85
+        ]
+      },
+      "twirl": {
+        "file": "symbeline/flip.glb",
+        "cut": [
+          0.2,
+          0.72
+        ]
+      },
+      "jabR": {
+        "file": "symbeline/slash.glb",
+        "cut": [
+          0.19,
+          0.31,
+          0.5
+        ]
+      },
+      "jabL": {
+        "file": "symbeline/box_02.glb",
+        "cut": [
+          0,
+          0.1,
+          0.45
+        ]
+      },
+      "spin": {
+        "file": "symbeline/dance_03.glb",
+        "cut": [
+          0.25,
+          0.33,
+          0.45
+        ],
+        "turns": 1
+      },
+      "throw": {
+        "file": "symbeline/pitch_baseball.glb",
+        "cut": [
+          0.15,
+          0.47,
+          0.9
+        ]
+      }
+    }
+  },
+  "deux": {
+    "model": "deux/model.glb",
+    "yaw": -1.5707963267948966,
+    "anims": {
+      "idle": {
+        "file": "deux/idle.glb"
+      },
+      "move": {
+        "file": "deux/run.glb"
+      },
+      "hurt": {
+        "file": "deux/hit_to_body_01.glb",
+        "cut": [
+          0,
+          1
+        ]
+      },
+      "down": {
+        "file": "deux/fall.glb",
+        "cut": [
+          0.15,
+          0.8
+        ]
+      },
+      "dead": {
+        "file": "deux/fall.glb",
+        "cut": [
+          0.15,
+          1
+        ]
+      },
+      "swapIn": {
+        "file": "deux/jump_down.glb",
+        "cut": [
+          0.6,
+          1
+        ]
+      },
+      "cheer": {
+        "file": "deux/victory_celebration.glb",
+        "cut": [
+          0.05,
+          0.85
+        ]
+      },
+      "bolt": {
+        "file": "deux/cast_a_spell.glb",
+        "cut": [
+          0.3,
+          0.5,
+          0.8
+        ]
+      },
+      "channel": {
+        "file": "deux/cast_a_spell.glb",
+        "cut": [
+          0.12,
+          0.56,
+          0.9
+        ]
+      }
+    },
+    "weapon": {
+      "model": "deux/weapon.glb",
+      "length": 1,
+      "grip": 0.45,
+      "tip": [
+        0,
+        0.97,
+        0.24
+      ]
+    }
+  },
+  "ghalus": {
+    "model": "ghalus/model.glb",
+    "yaw": -1.5707963267948966,
+    "anims": {
+      "idle": {
+        "file": "ghalus/idle.glb"
+      },
+      "move": {
+        "file": "ghalus/run.glb"
+      },
+      "hurt": {
+        "file": "ghalus/hit_to_body_01.glb",
+        "cut": [
+          0,
+          1
+        ]
+      },
+      "down": {
+        "file": "ghalus/fall.glb",
+        "cut": [
+          0.15,
+          0.8
+        ]
+      },
+      "dead": {
+        "file": "ghalus/fall.glb",
+        "cut": [
+          0.15,
+          1
+        ]
+      },
+      "swapIn": {
+        "file": "ghalus/jump_down.glb",
+        "cut": [
+          0.6,
+          1
+        ]
+      },
+      "cheer": {
+        "file": "ghalus/victory_celebration.glb",
+        "cut": [
+          0.05,
+          0.85
+        ]
+      },
+      "bolt": {
+        "file": "ghalus/cast_a_spell.glb",
+        "cut": [
+          0.3,
+          0.5,
+          0.8
+        ]
+      },
+      "channel": {
+        "file": "ghalus/cast_a_spell.glb",
+        "cut": [
+          0.12,
+          0.56,
+          0.9
+        ]
+      },
+      "roll": {
+        "file": "ghalus/dive.glb",
+        "cut": [
+          0.27,
+          0.9
+        ]
+      }
+    },
+    "weapon": {
+      "model": "ghalus/weapon.glb",
+      "length": 1.85,
+      "grip": 0.45,
+      "tip": [
+        0,
+        0.97,
+        0.24
+      ]
+    }
+  }
+}

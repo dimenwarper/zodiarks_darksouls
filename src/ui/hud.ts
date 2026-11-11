@@ -3,6 +3,7 @@ import type { Party } from '../chars/party';
 import type { Colossus } from '../boss/colossus';
 import { BOSS_NAME, BOSS_TITLE, BOSS_TUNING } from '../boss/colossus';
 import type { HitKind } from '../types';
+import { ZODIAC } from '../core/seal';
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', html = '') => {
   const e = document.createElement(tag);
@@ -21,6 +22,18 @@ function faceCrop(def: CharDef, boxW: number, boxH: number, zoom = 0.9) {
     backgroundSize: `${bgW}px ${bgH}px`,
     backgroundPosition: `${boxW / 2 - f.cx * bgW}px ${boxH / 2 - f.cy * bgH}px`,
   };
+}
+
+/** The serpent-bearer's sign, drawn as the colossus's portrait. */
+const BOSS_SIGN = `<svg viewBox="-1.5 -1.5 3 3">${ZODIAC[12]
+  .map((stroke) => `<polyline points="${stroke.map(([x, y]) => `${x.toFixed(3)},${(-y).toFixed(3)}`).join(' ')}"/>`)
+  .join('')}</svg>`;
+
+/** A line of story dialogue as the HUD needs it. */
+export interface DialogLine {
+  who: string;
+  ja: string;
+  en: string;
 }
 
 const KBM = {
@@ -69,6 +82,14 @@ export class Hud {
   private flashEl = el('div', 'flashfx');
   private loading = el('div', 'loading', 'SUMMONING…');
   private badge = el('div', 'badge');
+  private captionEl = el('div', 'caption', '<b></b><span class="ja"></span><span class="en"></span>');
+  private captionTimer = 0;
+  private dialogs = el('div', 'dialogs');
+  private bars = el('div', 'bars', '<i></i><i><span class="skip"></span></i>');
+  private objectiveEl = el('div', 'objective');
+  /** The box being typed out: its two halves (said, still to come), its text and how far along it is. */
+  private typing: { said: HTMLElement; rest: HTMLElement; text: string; shown: number; rate: number } | null = null;
+  private dialogTimer = 0;
   private hurtAmount = 0;
   private shownActive = -1;
   private device: 'kbm' | 'pad' = 'kbm';
@@ -76,7 +97,7 @@ export class Hud {
   private numCount = 0;
 
   constructor(private root: HTMLElement) {
-    root.append(el('div', 'vignette'), this.lowhp, this.hurt, this.fight, this.numbers, this.allout, this.banner, this.title, this.end, this.pause, this.flashEl, this.loading, this.badge);
+    root.append(el('div', 'vignette'), this.lowhp, this.hurt, this.fight, this.numbers, this.allout, this.bars, this.banner, this.title, this.end, this.objectiveEl, this.dialogs, this.pause, this.flashEl, this.captionEl, this.loading, this.badge);
 
     // Boss
     this.bossBox.innerHTML = `<div class="boss-name">${BOSS_NAME}<em>${BOSS_TITLE}</em></div>
@@ -126,7 +147,7 @@ export class Hud {
   private controlsHtml(k: typeof KBM) {
     const rows: [string, string][] = [
       [k.move, 'Move'], [k.look, 'Camera'], [k.light, 'Light attack'], [k.heavy, 'Heavy attack / spell'],
-      [k.roll, 'Dodge'], [k.sprint, 'Sprint'], [k.swap, 'Swap Knight'], [k.lock, 'Lock on'],
+      [k.roll, 'Dodge'], [k.sprint, 'Sprint'], [k.swap, 'Take over a Knight'], [k.lock, 'Lock on'],
       [k.lockNext, 'Next target'], [k.heal, "Ghalus's Cure"], [k.allout, 'All-Out Attack'], [k.pause, 'Pause'],
     ];
     return rows.map(([a, b]) => `<b>${a}</b><span>${b}</span>`).join('');
@@ -148,7 +169,8 @@ export class Hud {
     this.root.querySelectorAll('.controls').forEach((c) => (c.innerHTML = this.controlsHtml(k)));
     this.title.querySelector('.start')!.textContent = device === 'pad' ? 'PRESS A TO BEGIN' : 'CLICK TO BEGIN';
     this.pause.querySelector('.resume')!.textContent = device === 'pad' ? 'PRESS START TO RESUME' : 'CLICK TO RESUME';
-    this.help.innerHTML = `<b>${k.swap}</b> swap · <b>${k.lock}</b> lock · <b>${k.lockNext}</b> next target<br><b>${k.roll}</b> dodge · <b>${k.sprint}</b> sprint · <b>${k.pause}</b> pause`;
+    this.bars.querySelector('.skip')!.innerHTML = `<b>${device === 'pad' ? 'A' : 'ENTER'}</b> skip`;
+    this.help.innerHTML = `<b>${k.swap}</b> take over · <b>${k.lock}</b> lock · <b>${k.lockNext}</b> next target<br><b>${k.roll}</b> dodge · <b>${k.sprint}</b> sprint · <b>${k.pause}</b> pause`;
     this.cards.forEach((c, i) => {
       c.root.querySelector('.key')!.textContent = device === 'pad' ? ['▲', '▶', '▼', '◀'][i] : String(i + 1);
     });
@@ -201,6 +223,70 @@ export class Hud {
     this.end.innerHTML = `<h1>${kind === 'victory' ? 'The Exiled Sign Falls' : 'The Knights Have Fallen'}</h1><p>${detail}</p><div class="again">${again}</div>`;
     void this.end.offsetWidth;
     this.end.classList.add('on', kind);
+  }
+
+  /** A spoken line: who said it, the Japanese as spoken, and what it means. */
+  caption(who: string, ja: string, en: string, seconds: number) {
+    window.clearTimeout(this.captionTimer);
+    if (!en || seconds <= 0) {
+      this.captionEl.classList.remove('on');
+      return;
+    }
+    const def = PARTY.find((d) => d.id === who);
+    this.captionEl.style.setProperty('--c', def?.css ?? '#ff9a80');
+    this.captionEl.children[0].textContent = def ? def.name.split(' ')[0] : BOSS_NAME;
+    this.captionEl.children[1].textContent = `「${ja}」`;
+    this.captionEl.children[2].textContent = en;
+    this.captionEl.classList.add('on');
+    this.captionTimer = window.setTimeout(() => this.captionEl.classList.remove('on'), seconds * 1000);
+  }
+
+  /**
+   * A box of story dialogue: the speaker's face and name, and their line typed out. The box
+   * before it slides away. `null` takes whatever is up away.
+   */
+  dialog(line: DialogLine | null, seconds = 0) {
+    window.clearTimeout(this.dialogTimer);
+    for (const old of Array.from(this.dialogs.children)) {
+      if (old.classList.contains('out')) continue;
+      old.classList.add('out');
+      setTimeout(() => old.remove(), 320);
+    }
+    this.typing = null;
+    this.root.classList.toggle('talking', !!line);
+    if (!line) return;
+    const def = PARTY.find((d) => d.id === line.who);
+    const box = el('div', `dialog${def ? '' : ' foe'}`);
+    if (def) box.style.setProperty('--c', def.css);
+    const face = el('div', 'face', def ? '' : BOSS_SIGN);
+    if (def) Object.assign(face.style, faceCrop(def, 76, 76, 0.95));
+    const body = el('div', 'body');
+    const name = el('b', 'name');
+    name.textContent = def ? def.name.split(' ')[0] : BOSS_NAME;
+    const en = el('p', 'en');
+    const said = el('span');
+    const rest = el('i');
+    rest.textContent = line.en;
+    en.append(said, rest);
+    const ja = el('p', 'ja');
+    ja.textContent = `「${line.ja}」`;
+    body.append(name, en, ja);
+    box.append(face, body);
+    this.dialogs.append(box);
+    // Typed out over the first part of its time on screen, so there is time left to read it.
+    this.typing = { said, rest, text: line.en, shown: 0, rate: Math.max(28, line.en.length / Math.max(0.4, seconds * 0.45)) };
+    this.dialogTimer = window.setTimeout(() => this.dialog(null), seconds * 1000);
+  }
+
+  /** Letterbox bars for the scenes that take the camera. */
+  cinema(on: boolean) {
+    this.root.classList.toggle('cinema', on);
+  }
+
+  /** What to do next, in a line at the top of the screen. */
+  objective(html: string | null) {
+    this.objectiveEl.classList.toggle('on', !!html);
+    if (html) this.objectiveEl.innerHTML = html;
   }
 
   toast(text: string, kind: 'good' | 'bad' | 'info' = 'info') {
@@ -311,6 +397,8 @@ export class Hud {
       const c = this.cards[i];
       c.hp.style.transform = `scaleX(${Math.max(0, mm.hp / mm.def.hp)})`;
       c.root.classList.toggle('dead', !mm.alive);
+      // Whoever the boss has turned on.
+      c.root.classList.toggle('hunted', mm.alive && mm === party.bossTarget && (boss.state === 'fight' || boss.state === 'transition'));
       c.cool.style.transform = `skewX(-8deg) scaleY(${i === party.active || !mm.alive ? 0 : party.swapCD / TUNING.swapCooldown})`;
     });
     const frac = Math.max(0, m.hp / m.def.hp);
@@ -328,7 +416,8 @@ export class Hud {
     } else if (m.def.id === 'deux') {
       for (let i = 0; i < TUNING.kindleMax; i++) pips += `<span class="${i < m.kindle ? 'on' : ''}"></span>`;
       pips += '<label>KINDLE</label>';
-    } else if (party.swapBuff > 0) pips = '<label style="color:#fff3c4">PERFECT SWAP +25%</label>';
+    }
+    if (m.tagT > 0) pips += `<label style="color:#fff3c4">TAGGED IN · NEXT HIT +${Math.round((TUNING.tagBonus - 1) * 100)}%</label>`;
     if (this.pips.innerHTML !== pips) this.pips.innerHTML = pips;
 
     // Cure
@@ -340,13 +429,23 @@ export class Hud {
     const label = !ghalus.alive
       ? 'GHALUS HAS FALLEN'
       : ghalus === m
-        ? 'NO CURE WHILE GHALUS FIGHTS'
+        ? 'GHALUS HEALS ONLY AS AN ALLY'
         : party.cureCD > 0
           ? `CURE READY IN ${party.cureCD.toFixed(0)}`
           : `<b>${key}</b> GHALUS · CURE`;
     if (this.cureLabel.innerHTML !== label) this.cureLabel.innerHTML = label;
 
     // Transients
+    const ty = this.typing;
+    if (ty && ty.shown < ty.text.length) {
+      const before = Math.floor(ty.shown);
+      ty.shown = Math.min(ty.text.length, ty.shown + ty.rate * dt);
+      const now = Math.floor(ty.shown);
+      if (now !== before) {
+        ty.said.textContent = ty.text.slice(0, now);
+        ty.rest.textContent = ty.text.slice(now);
+      }
+    }
     this.hurtAmount = Math.max(0, this.hurtAmount - dt * 1.8);
     this.hurt.style.opacity = String(this.hurtAmount);
     if (this.helpTimer > 0) {

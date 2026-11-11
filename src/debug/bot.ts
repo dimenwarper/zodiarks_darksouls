@@ -1,13 +1,11 @@
-import { distPointSegment, distXZ, rand } from '../core/math';
+import { rand } from '../core/math';
 import type { Game } from '../game';
-import * as THREE from 'three';
-
-const _p = new THREE.Vector3();
+import { senseDanger } from '../chars/ally';
 
 /**
- * A simple autoplayer used to exercise the whole fight in automated runs (and as an
- * attract mode). It is not meant to be good: it walks to a target, attacks, dodges
- * announced impacts, heals, swaps and triggers the All-Out Attack.
+ * A simple autoplayer that stands in for the player in automated runs (and as an attract
+ * mode). It is not meant to be good: it steers the controlled Knight to a target, attacks,
+ * dodges announced impacts, heals, switches Knight and triggers the All-Out Attack.
  */
 export class Bot {
   private rollCD = 0;
@@ -23,7 +21,15 @@ export class Bot {
     const g = this.game;
     const { party, boss, input } = g;
     input.worldMove = { x: 0, z: 0 };
-    if (g.mode !== 'fight' || party.state === 'dead' || party.cinematic) return;
+    if (g.mode === 'arrive' && !party.cinematic) {
+      // The walk in: straight at the colossus until it wakes.
+      const dx = boss.pos.x - party.pos.x;
+      const dz = boss.pos.z - party.pos.z;
+      const d = Math.hypot(dx, dz) || 1;
+      input.worldMove = { x: dx / d, z: dz / d };
+      return;
+    }
+    if (g.mode !== 'fight' || !party.cur.alive || party.cinematic) return;
     this.rollCD -= dt;
     this.swapTimer -= dt;
     this.think -= dt;
@@ -36,28 +42,9 @@ export class Bot {
     if (!party.lock) input.press('lock');
 
     // Dodge: announced ground impacts, shockwave rings, and sweeping limbs.
-    let dodge: { x: number; z: number } | null = null;
-    for (const t of g.threats) {
-      const eta = t.at - g.time;
-      if (eta < 0.3 && eta > -0.15 && distXZ(p, t.pos) < t.radius + 1.0) {
-        dodge = { x: p.x - t.pos.x, z: p.z - t.pos.z };
-        if (Math.hypot(dodge.x, dodge.z) < 0.5) dodge = { x: -toBoss.z, z: toBoss.x };
-      }
-    }
-    for (const h of g.hazards) {
-      if (h.resolved) continue;
-      if (h.shape === 'ring') {
-        const d = distXZ(p, h.center);
-        if (Math.abs(d - h.radius) < 2.6 && h.radius < d + 1) dodge = { x: h.center.x - p.x, z: h.center.z - p.z };
-      } else if (h.shape === 'capsule') {
-        _p.set(p.x, 1, p.z);
-        if (distPointSegment(_p, h.center, h.b!) < h.radius + 3.2) dodge = { x: toBoss.x, z: toBoss.z };
-      } else if (h.shape === 'circle' && h.label === 'beam') {
-        if (distXZ(p, h.center) < h.radius + 3.5) dodge = { x: h.center.x - p.x, z: h.center.z - p.z };
-      } else if (h.shape === 'circle' && h.tick && distXZ(p, h.center) < h.radius + 0.6) {
-        input.worldMove = { x: toBoss.x / dBoss, z: toBoss.z / dBoss };
-      }
-    }
+    const danger = senseDanger(g, m, boss.pos);
+    if (danger.leave) input.worldMove = { x: danger.leave.x / dBoss, z: danger.leave.z / dBoss };
+    const dodge = danger.roll;
     if (dodge && this.rollCD <= 0 && m.stamina > 0 && (party.state === 'free' || party.state === 'attack')) {
       this.rollCD = 0.7;
       if (rand() < this.skill) {

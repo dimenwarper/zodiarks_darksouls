@@ -1,0 +1,91 @@
+{
+  "arrive": [
+    {"who": "symbeline", "ja": "ここが、サクニテが星で見たっていう場所? …静かすぎない?", "en": "So this is the place Sacniete saw in her stars? …It's awfully quiet.", "tone": "[curious, hushed]"},
+    {"who": "ghalus", "ja": "十二の星座の輪…そして、砕かれた十三番目の台座。ここで何かが、空から消されたのです。", "en": "A wheel of twelve signs… and a thirteenth plinth, smashed. Something was struck from the heavens here.", "tone": "[thoughtful, grave]"},
+    {"who": "deux", "ja": "でっかい像に、見張りなし、入場料なし。…うますぎる話だねぇ。", "en": "One giant statue, no guards, no entry fee. …This deal is too good.", "tone": "[suspicious, mischievously]"},
+    {"who": "symbeline", "ja": "心配性ね。「あなたたち四人で十分」って、サクニテは言ってたわ。みんな、信じてくれてるのよ。", "en": "Oh, relax. \"You four will be enough,\" Sacniete said. They believe in us — every one of them.", "tone": "[playfully, warmly]"},
+    {"who": "sigmund", "ja": "……像じゃない。", "en": "…That's no statue.", "tone": "[low, gruff]"}
+  ],
+  "approach": [
+    {"who": "ghalus", "ja": "シグムンド、突っ込んではいけませんよ。今日はドラコーンがいないのですから。", "en": "Sigmund, no charging in. Drakohn is not here to pull you out today.", "tone": "[calm, firm]"},
+    {"who": "sigmund", "ja": "……なら、倒れなければいい。", "en": "…Then I just won't fall.", "tone": "[low, gruff]"}
+  ],
+  "wake": [
+    {"who": "boss", "bark": "intro", "ja": "我が名を…呼ぶのは…誰だ…", "en": "Who… calls… my name…"},
+    {"who": "deux", "ja": "うわ、動いた! だから言ったんだ、うますぎるって!", "en": "Whoa, it moves! I TOLD you it was too good!", "tone": "[alarmed, shouting]"}
+  ],
+  "lore": [
+    {"who": "deux", "ja": "で、結局こいつは何なんだい!?", "en": "So what IS this thing, anyway?!", "tone": "[shouting]"},
+    {"who": "ghalus", "ja": "蛇遣い座、オフィウクス。星座の輪から外され、忘れられた十三番目の星です。", "en": "Ophiuchus, the Serpent-Bearer. The thirteenth sign — cast out of the zodiac, and forgotten.", "tone": "[calm, grave]"},
+    {"who": "symbeline", "ja": "忘れられた? …それは機嫌も悪くなるわね。", "en": "Forgotten? …No wonder it's in a mood.", "tone": "[amused]"}
+  ],
+  "twelve": [
+    {"who": "boss", "ja": "十二…いつも十二だ…。その名を掲げる者どもよ…!", "en": "Twelve… always twelve… You who bear their name…!", "tone": "[slow, deep, bitter]"},
+    {"who": "sigmund", "ja": "……俺たちは、ただの冒険者だ。", "en": "…We're just adventurers.", "tone": "[low, gruff]"},
+    {"who": "deux", "ja": "それにウチは十人だよ。数え直しな!", "en": "And there are ten of us. Count again!", "tone": "[mischievously, shouting]"}
+  ],
+  "eclipse": [
+    {"who": "ghalus", "ja": "月が…喰われた…。皆さん、光のそばを離れないように。", "en": "The moon… it has been swallowed. Stay close to the light, all of you.", "tone": "[grave]"},
+    {"who": "symbeline", "ja": "帰ったらサクニテに「だから言ったでしょ」って言われるわね、これ。", "en": "Sacniete is going to say \"I told you so\" when we get home, isn't she.", "tone": "[wry, amused]"}
+  ],
+  "friends": [
+    {"who": "symbeline", "ja": "ラサスがいたら、大笑いしながら飛び込んでるわね!", "en": "If Rathas were here she'd be diving in, laughing her head off!", "tone": "[laughing]"},
+    {"who": "sigmund", "ja": "……ゼントスケとの、ハイタッチが待っている。", "en": "…Zentosuke owes me a high five.", "tone": "[low, gruff]"},
+    {"who": "deux", "ja": "ルナには、この土産話を高く売りつけないとね!", "en": "And I'm selling Luna this story at a premium!", "tone": "[mischievously]"}
+  ],
+  "allout": [
+    {"who": "symbeline", "ja": "今の見た!? ルナならきっと、首飾りにしたがるわ!", "en": "Did you SEE that?! Luna would want it set in a necklace!", "tone": "[excited]"},
+    {"who": "ghalus", "ja": "気を抜かないで。まだ立ち上がりますよ。", "en": "Stay sharp. It is getting back up.", "tone": "[calm, firm]"}
+  ],
+  "rally": [
+    {
+      "lead": {
+        "symbeline": {"ja": "これは、あたしたちを信じてくれる仲間のために!", "en": "This is for our friends — who believe in us!", "tone": "[shouting, heartfelt]"},
+        "deux": {"ja": "これは、ボクらを信じてくれる仲間のためだ!", "en": "This is for our friends — the ones who believe in us!", "tone": "[shouting, heartfelt]"},
+        "ghalus": {"ja": "これは、私たちを信じてくれる仲間のために!", "en": "This is for our friends, who believe in us!", "tone": "[shouting, heartfelt]"},
+        "sigmund": {"ja": "……俺たちを信じる、仲間のために。", "en": "…For our friends. The ones who believe in us.", "tone": "[low, resolute]"}
+      }
+    },
+    {
+      "reply": {
+        "sigmund": {"ja": "……ああ。", "en": "…Aye.", "tone": "[low, gruff]"},
+        "ghalus": {"ja": "ええ。必ず、皆で帰りましょう。", "en": "Yes. We all go home together.", "tone": "[calm, warmly]"},
+        "deux": {"ja": "よーし、全部乗せでいくよ!", "en": "Right — everything we've got!", "tone": "[excited, shouting]"},
+        "symbeline": {"ja": "最後まで、踊りきるわよ!", "en": "We dance this one to the end!", "tone": "[shouting]"}
+      },
+      "count": 2
+    }
+  ],
+  "alone": [
+    {
+      "lead": {
+        "symbeline": {"ja": "みんな…見ててよね。あたし、まだ踊れるから!", "en": "Everyone… watch me. I can still dance!", "tone": "[out of breath, determined]"},
+        "deux": {"ja": "ひとりで全員分かい…。高くつくよ、これは!", "en": "All four shares on me, huh… This is going to cost extra!", "tone": "[out of breath, defiant]"},
+        "ghalus": {"ja": "皆さんの分まで…私が、立っていなくては。", "en": "For all of you… I must stay standing.", "tone": "[out of breath, resolute]"},
+        "sigmund": {"ja": "……ひとりでも、倒れん。", "en": "…Alone, then. I won't fall.", "tone": "[low, resolute]"}
+      }
+    }
+  ],
+  "fallen-deux": [
+    {"who": "sigmund", "ja": "ドゥー…! 昼飯の約束は、まだ生きてるぞ。", "en": "Deux…! You still owe me lunch.", "tone": "[low, angry]"}
+  ],
+  "fallen-symbeline": [
+    {"who": "ghalus", "ja": "シンベリン! …説教は、まだ終わっていませんよ!", "en": "Symbeline! …I am not finished lecturing you!", "tone": "[alarmed, shouting]"}
+  ],
+  "fallen-ghalus": [
+    {"who": "symbeline", "ja": "ガルス! …あたしを叱る人が、いなくなるじゃない!", "en": "Ghalus! …Who's going to scold me now?!", "tone": "[alarmed, shouting]"}
+  ],
+  "fallen-sigmund": [
+    {"who": "deux", "ja": "シグムンド! ツケを残して寝るんじゃないよ!", "en": "Sigmund! Don't you nap on an unpaid tab!", "tone": "[alarmed, shouting]"}
+  ],
+  "final": [
+    {"who": "ghalus", "ja": "光が弱まっています…あと一押しです!", "en": "Its light is failing… one more push!", "tone": "[shouting]"}
+  ],
+  "victory": [
+    {"who": "ghalus", "ja": "お眠りなさい、十三番目の星よ。あなたの名は、私たちが覚えておきます。", "en": "Rest now, thirteenth star. We will remember your name.", "tone": "[calm, gently]"},
+    {"who": "deux", "ja": "オフィウクス、ね。店の新メニューの名前にしてやるよ。蛇料理でさ。", "en": "Ophiuchus, huh. I'll name a dish after you. Something with snake.", "tone": "[mischievously]"},
+    {"who": "symbeline", "ja": "今夜はお屋敷でパーティよ! ガルスのおごりで!", "en": "Party at the mansion tonight! Ghalus is buying!", "tone": "[laughing, delighted]"},
+    {"who": "ghalus", "ja": "おごりません。", "en": "I am not.", "tone": "[flatly]"},
+    {"who": "sigmund", "ja": "……まずは昼飯だ。", "en": "…Lunch first.", "tone": "[low, gruff]"}
+  ]
+}

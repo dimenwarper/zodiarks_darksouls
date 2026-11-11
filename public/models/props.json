@@ -1,0 +1,146 @@
+{
+  "boss_helm": {
+    "file": "props/boss_helm.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_chest": {
+    "file": "props/boss_chest.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_pelvis": {
+    "file": "props/boss_pelvis.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_tasset": {
+    "file": "props/boss_tasset.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_pauldron": {
+    "file": "props/boss_pauldron.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_arm": {
+    "file": "props/boss_arm.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_forearm": {
+    "file": "props/boss_forearm.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_fist": {
+    "file": "props/boss_fist.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_thigh": {
+    "file": "props/boss_thigh.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_shin": {
+    "file": "props/boss_shin.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_foot": {
+    "file": "props/boss_foot.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "boss_wing": {
+    "file": "props/boss_wing.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_pillar": {
+    "file": "props/arena_pillar.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_stump": {
+    "file": "props/arena_stump.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_drum": {
+    "file": "props/arena_drum.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_brazier": {
+    "file": "props/arena_brazier.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_statue": {
+    "file": "props/arena_statue.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  },
+  "arena_plinth": {
+    "file": "props/arena_plinth.glb",
+    "turn": [
+      0,
+      -90,
+      0
+    ]
+  }
+}
